@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>පරිපාලක සංස්කරණය · Pāli–Sinhala</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="stylesheet" href="css/offline-dictionary.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body class="auth-locked">
+
+    <div id="authOverlay" class="auth-overlay"></div>
+
+    <header class="topbar">
+        <div>
+            <h1>පරිපාලක සංස්කරණය</h1>
+            <p class="subtitle">Admin Edit · දෝෂ නිවැරදි කිරීම් <a href="index.html" class="backlink">← ශබ්දකෝෂයට</a></p>
+        </div>
+        <div class="topbar-right">
+            <button type="button" id="saveAllBtn" class="btn primary save-all">වෙනස්කම් සුරකින්න</button>
+            <button type="button" id="logoutBtn" class="btn secondary">පිටවන්න</button>
+            <div id="status" class="status">දත්ත පූරණය වෙමින්...</div>
+        </div>
+    </header>
+
+    <main class="wrap admin-wrap">
+
+        <section class="panel">
+
+            <h2>සෙවීම</h2>
+            <p class="hint">සංස්කරණය කිරීමට වචනයක් සොයන්න</p>
+
+            <div class="search-row">
+                <input type="search" id="searchInput" placeholder="උදා: nibbāna / නිබ්බාන"
+                    autocomplete="off" spellcheck="false">
+                <button type="button" id="searchBtn" class="btn primary">සොයන්න</button>
+                <button type="button" id="clearBtn" class="btn secondary">මකන්න</button>
+            </div>
+
+            <div class="quick-title">පෙර නිවැරදි කිරීම්: <span id="corrCount">0</span></div>
+
+            <div class="results" id="results">
+                <div class="empty">වචනයක් සොයන්න.</div>
+            </div>
+
+        </section>
+
+        <section class="panel">
+
+            <div class="result-head">
+                <h2>සංස්කරණය</h2>
+                <span id="dirtyBadge" class="dirty-badge"></span>
+            </div>
+
+            <div id="editor">
+                <div class="empty">වම් පසින් වචනයක් තෝරන්න.</div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="stats" id="stats"></footer>
+
+    <script src="js/admin-auth.js" defer></script>
+    <script src="js/admin-edit.js" defer></script>
+
+</body>
+
+</html>

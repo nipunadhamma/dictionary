@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /data/corrections.json
+
+Sitemap: https://dictionary.suththa.org/sitemap.xml

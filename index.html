@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>පාලි–සිංහල ශබ්දකෝෂය · Pali–Sinhala Dictionary — dictionary.suththa.org</title>
+    <meta name="description"
+        content="සම්පූර්ණ පාලි–සිංහල ශබ්දකෝෂය — වචන 160,000+ සුමංගල, බුද්ධදත්ත හා DPD ආශ්‍රිත අර්ථ. පාලි හෝ සිංහල අකුරුවලින් සොයන්න, ක්ෂණිකව.">
+    <meta name="keywords" content="පාලි සිංහල ශබ්දකෝෂය, පාලි ශබ්දකෝෂය, සිංහල පාලි, Pali Sinhala dictionary, Pali dictionary, Buddhism dictionary, ත්‍රිපිටක">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://dictionary.suththa.org/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Suththa.org">
+    <meta property="og:title" content="පාලි–සිංහල ශබ්දකෝෂය · dictionary.suththa.org">
+    <meta property="og:description" content="වචන 160,000+ පාලි–සිංහල ශබ්දකෝෂය — ක්ෂණික සෙවීම, offline වැඩ කිරීම.">
+    <meta property="og:url" content="https://dictionary.suththa.org/">
+    <meta property="og:image" content="https://suththa.org/assets/hero-og.png">
+    <meta property="og:locale" content="si_LK">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="පාලි–සිංහල ශබ්දකෝෂය · dictionary.suththa.org">
+    <meta name="twitter:description" content="වචන 160,000+ පාලි–සිංහල ශබ්දකෝෂය — ක්ෂණික සෙවීම, offline වැඩ කිරීම.">
+    <meta name="twitter:image" content="https://suththa.org/assets/hero-og.png">
+
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="assets/favicon-192.png">
+
+    <link rel="stylesheet" href="css/offline-dictionary.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "පාලි–සිංහල ශබ්දකෝෂය",
+        "url": "https://dictionary.suththa.org/",
+        "applicationCategory": "ReferenceApplication",
+        "operatingSystem": "Any",
+        "inLanguage": ["si", "pi"],
+        "description": "සම්පූර්ණ පාලි–සිංහල ශබ්දකෝෂය — වචන 160,000+. සුමංගල, බුද්ධදත්ත හා DPD මූලාශ්‍ර.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "LKR" },
+        "publisher": { "@type": "Organization", "name": "Suththa.org", "url": "https://suththa.org/" }
+    }
+    </script>
+</head>
+
+<body>
+
+    <nav class="sitenav" aria-label="suththa.org">
+        <div class="sitenav-inner">
+            <a class="sitenav-brand" href="https://suththa.org/">
+                <img src="assets/logo.svg" alt="" width="22" height="22">
+                <span>සුත්ත<span class="sitenav-dot">.org</span></span>
+            </a>
+            <a class="sitenav-link" href="https://suththa.org/">මුල් පිටුව</a>
+            <a class="sitenav-link" href="https://tripitakaya.suththa.org/">ත්‍රිපිටකය</a>
+            <a class="sitenav-link" href="https://nipunadhamma.org/">ධර්ම දේශනා</a>
+        </div>
+    </nav>
+
+    <header class="topbar">
+        <div>
+            <h1>පාලි–සිංහල ශබ්දකෝෂය</h1>
+            <p class="subtitle">Offline Pāli–Sinhala Dictionary · සුමංගල · බුද්ධදත්ත · DPD</p>
+        </div>
+        <div id="status" class="status">දත්ත පූරණය වෙමින්...</div>
+    </header>
+
+    <main class="wrap">
+
+        <section class="panel">
+
+            <h2>ශබ්දකෝෂ සෙවීම</h2>
+            <p class="hint">පාලි වචනයක් හෝ සිංහල වචනයක් ලියන්න</p>
+
+            <div class="search-row">
+                <input type="search" id="searchInput" placeholder="උදා: nibbāna / නිබ්බාන"
+                    autocomplete="off" spellcheck="false">
+                <button type="button" id="searchBtn" class="btn primary">සොයන්න</button>
+                <button type="button" id="clearBtn" class="btn secondary">මකන්න</button>
+            </div>
+
+            <div class="mode-row">
+                <label>
+                    <input type="checkbox" id="modeMeaning">
+                    සිංහල අර්ථයෙන් සොයන්න
+                </label>
+            </div>
+
+            <div class="quick-title">ඉක්මන් සෙවීම්</div>
+            <div class="quick-searches">
+                <button type="button" data-word="nibbana">nibbana</button>
+                <button type="button" data-word="citta">citta</button>
+                <button type="button" data-word="dhamma">dhamma</button>
+                <button type="button" data-word="parinibbanti">parinibbanti</button>
+                <button type="button" data-word="bhikkhu">bhikkhu</button>
+                <button type="button" data-word="නිබ්බනා">නිබ්බනා</button>
+            </div>
+
+        </section>
+
+        <section class="panel">
+
+            <div class="result-head">
+                <h2>ප්‍රතිඵල</h2>
+                <span id="resultCount" class="result-count"></span>
+            </div>
+
+            <div id="results">
+                <div class="empty">වචනයක් සොයන්න.</div>
+            </div>
+
+        </section>
+
+        <section class="panel">
+
+            <h2>විස්තර</h2>
+            <p class="hint">තෝරාගත් entry එකේ සම්පූර්ණ අර්ථ</p>
+
+            <div id="detail">
+                <div class="empty">ප්‍රතිඵලයක වචනයක් තෝරන්න.</div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="stats" id="stats"><a href="admin.html" class="admin-link">පරිපාලක සංස්කරණය</a></footer>
+    <script src="js/offline-dictionary.js" defer></script>
+
+</body>
+
+</html>

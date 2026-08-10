@@ -1,0 +1,247 @@
+/* ---------- admin page ---------- */
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.backlink {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dashed currentColor;
+}
+
+.backlink:hover {
+    color: var(--accent);
+}
+
+.admin-wrap {
+    grid-template-columns: minmax(300px, 5fr) minmax(400px, 7fr);
+}
+
+.results .result-item {
+    position: relative;
+}
+
+.corr-tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 1px 8px;
+    vertical-align: middle;
+}
+
+/* ---------- editor form ---------- */
+
+.edit-key {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    word-break: break-all;
+}
+
+.edit-key code {
+    background: var(--chip);
+    border-radius: 5px;
+    padding: 1px 6px;
+}
+
+.fld {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.fld input[type="text"],
+.fld input[type="number"] {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    padding: 8px 10px;
+    margin-top: 4px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+}
+
+.fld input:focus {
+    outline: 2px solid var(--accent-soft);
+    border-color: var(--accent);
+}
+
+.mean-head {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.mean-row {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #fdfcf9;
+}
+
+.mean-si {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    resize: vertical;
+    background: #fff;
+}
+
+.mean-si:focus {
+    outline: 2px solid var(--accent-soft);
+    border-color: var(--accent);
+}
+
+.mean-foot {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.mean-src {
+    flex: 1;
+    font: inherit;
+    font-size: 12px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.btn.small {
+    font-size: 12px;
+    padding: 5px 10px;
+}
+
+.btn.danger {
+    background: #fbeae6;
+    border-color: #e8b9ad;
+    color: #a03a28;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.edit-msg {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.edit-msg.ok {
+    color: var(--ok);
+}
+
+.dirty-badge {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.dirty-badge.on {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.save-all {
+    white-space: nowrap;
+}
+
+/* ---------- auth overlay ---------- */
+
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 38, 32, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.auth-overlay.hidden {
+    display: none;
+}
+
+.auth-card {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 28px;
+    width: 340px;
+    max-width: 100%;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.auth-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.auth-hint {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 14px;
+}
+
+.auth-pass {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.auth-pass:focus {
+    outline: 2px solid var(--accent-soft);
+    border-color: var(--accent);
+}
+
+.auth-msg {
+    margin-top: 10px;
+    font-size: 13px;
+    min-height: 18px;
+}
+
+.auth-msg.err {
+    color: #a03a28;
+}
+
+.auth-msg.ok {
+    color: var(--ok);
+}
+
+.auth-actions {
+    margin-top: 6px;
+}
+
+.auth-actions .btn {
+    width: 100%;
+}
+
+body.auth-locked main,
+body.auth-locked footer {
+    visibility: hidden;
+}
