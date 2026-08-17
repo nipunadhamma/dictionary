@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>පිවිසුම · Pali–Sinhala Dictionary — dictionary.suththa.org</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="assets/favicon-192.png">
+
+    <link rel="stylesheet" href="css/offline-dictionary.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+
+<body>
+
+    <nav class="sitenav" aria-label="suththa.org">
+        <div class="sitenav-inner">
+            <a class="sitenav-brand" href="https://suththa.org/">
+                <img src="assets/logo.svg" alt="" width="22" height="22">
+                <span>සුත්ත<span class="sitenav-dot">.org</span></span>
+            </a>
+            <a class="sitenav-link" href="index.html">ශබ්දකෝෂය</a>
+            <a class="sitenav-link" href="https://suththa.org/">මුල් පිටුව</a>
+        </div>
+    </nav>
+
+    <header class="topbar">
+        <div>
+            <h1>පිවිසුම</h1>
+            <p class="subtitle">Pāli–Sinhala Dictionary · dictionary.suththa.org</p>
+        </div>
+    </header>
+
+    <main class="wrap wrap-center">
+
+        <section class="panel login-panel">
+            <h2>සංස්කරණ ගිණුමට පිවිසෙන්න</h2>
+            <p class="hint">ඔබට ප්‍රවේශ බලපත්‍රයක් තිබේ නම් පහතින් පිවිසෙන්න.</p>
+
+            <form id="loginForm" autocomplete="on">
+                <label>
+                    Email
+                    <input type="email" id="loginEmail" required autocomplete="email" placeholder="you@example.com">
+                </label>
+                <label>
+                    මුරපදය
+                    <input type="password" id="loginPass" required autocomplete="current-password" placeholder="••••••••">
+                </label>
+                <div id="loginError" class="auth-error"></div>
+                <button type="submit" class="btn primary" style="width:100%">පිවිසෙන්න</button>
+            </form>
+
+            <div id="loginSuccess" class="login-success" style="display:none">
+                <p>සාර්ථකව පිවිසුණි.</p>
+                <a href="index.html" class="btn primary">ශබ්දකෝෂයට යන්න</a>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="stats" id="stats">
+        <a href="offline.html" class="admin-link">Offline පිටුව</a>
+    </footer>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="js/normalize.js" defer></script>
+    <script src="js/db.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var form = document.getElementById("loginForm");
+        var emailEl = document.getElementById("loginEmail");
+        var passEl = document.getElementById("loginPass");
+        var errorEl = document.getElementById("loginError");
+        var successEl = document.getElementById("loginSuccess");
+
+        if (!Dict.db.init()) {
+            errorEl.textContent = "Firebase සැකසුම නොමැත.";
+            return;
+        }
+
+        Dict.auth.init();
+
+        Dict.auth.onAuthChange(function(a) {
+            if (a.user && !a.isPublic) {
+                form.style.display = "none";
+                successEl.style.display = "block";
+            }
+        });
+
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
+            var email = emailEl.value.trim();
+            var pass = passEl.value;
+            if (!email || !pass) {
+                errorEl.textContent = "Email සහ මුරපදය අවශ්‍යයි.";
+                return;
+            }
+            errorEl.textContent = "";
+            Dict.auth.signIn(email, pass).then(function() {
+                form.style.display = "none";
+                successEl.style.display = "block";
+            }).catch(function(err) {
+                var msg =
+                    err.code === "auth/user-not-found" ? "මෙම email එක හමු නොවීය." :
+                    err.code === "auth/wrong-password" ? "මුරපදය වැරදියි." :
+                    err.code === "auth/invalid-email" ? "වලංගු email එකක් ඇතුලත් කරන්න." :
+                    err.code === "auth/too-many-requests" ? "නැවත උත්සාහ කරන්න." :
+                    err.code === "auth/invalid-credential" ? "Email හෝ මුරපදය වැරදියි." :
+                    "දෝෂයක්: " + (err.message || err.code);
+                errorEl.textContent = msg;
+            });
+        });
+    });
+    </script>
+
+</body>
+
+</html>

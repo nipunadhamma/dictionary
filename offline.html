@@ -15,7 +15,7 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Suththa.org">
     <meta property="og:title" content="පාලි–සිංහල ශබ්දකෝෂය · dictionary.suththa.org">
-    <meta property="og:description" content="වචන 160,000+ පාලි–සිංහල ශබ්දකෝෂය — ක්ෂණික සෙවීම, සහයෝගී සංස්කරණය.">
+    <meta property="og:description" content="වචන 160,000+ පාලි–සිංහල ශබ්දකෝෂය — ක්ෂණික සෙවීම, offline වැඩ කිරීම.">
     <meta property="og:url" content="https://dictionary.suththa.org/">
     <meta property="og:image" content="https://suththa.org/assets/hero-og.png">
     <meta property="og:locale" content="si_LK">
@@ -23,7 +23,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="පාලි–සිංහල ශබ්දකෝෂය · dictionary.suththa.org">
-    <meta name="twitter:description" content="වචන 160,000+ පාලි–සිංහල ශබ්දකෝෂය — ක්ෂණික සෙවීම, සහයෝගී සංස්කරණය.">
+    <meta name="twitter:description" content="වචන 160,000+ පාලි–සිංහල ශබ්දකෝෂය — ක්ෂණික සෙවීම, offline වැඩ කිරීම.">
     <meta name="twitter:image" content="https://suththa.org/assets/hero-og.png">
 
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
@@ -31,7 +31,6 @@
     <link rel="apple-touch-icon" href="assets/favicon-192.png">
 
     <link rel="stylesheet" href="css/offline-dictionary.css">
-    <link rel="stylesheet" href="css/app.css">
 
     <script type="application/ld+json">
     {
@@ -42,7 +41,7 @@
         "applicationCategory": "ReferenceApplication",
         "operatingSystem": "Any",
         "inLanguage": ["si", "pi"],
-        "description": "සම්පූර්ණ පාලි–සිංහල ශබ්දකෝෂය — වචන 160,000+. සහයෝගී සංස්කරණය.",
+        "description": "සම්පූර්ණ පාලි–සිංහල ශබ්දකෝෂය — වචන 160,000+. සුමංගල, බුද්ධදත්ත හා DPD මූලාශ්‍ර.",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "LKR" },
         "publisher": { "@type": "Organization", "name": "Suththa.org", "url": "https://suththa.org/" }
     }
@@ -66,14 +65,9 @@
     <header class="topbar">
         <div>
             <h1>පාලි–සිංහල ශබ්දකෝෂය</h1>
-            <p class="subtitle">සහයෝගී ශබ්දකෝෂය · සුමංගල · බුද්ධදත්ත · DPD</p>
+            <p class="subtitle">Offline Pāli–Sinhala Dictionary · සුමංගල · බුද්ධදත්ත · DPD</p>
         </div>
-        <div class="topbar-right">
-            <div id="authBar" class="auth-bar">
-                <button type="button" class="btn small primary" id="authSignInBtn">පිවිසුම</button>
-            </div>
-            <div id="status" class="status">ආරම්භ වෙමින්...</div>
-        </div>
+        <div id="status" class="status">දත්ත පූරණය වෙමින්...</div>
     </header>
 
     <main class="wrap">
@@ -81,10 +75,10 @@
         <section class="panel">
 
             <h2>ශබ්දකෝෂ සෙවීම</h2>
-            <p class="hint">පාලි / සිංහල / Singlish — උදා: dhamma, ධර්මය, dharmaya</p>
+            <p class="hint">පාලි වචනයක් හෝ සිංහල වචනයක් ලියන්න</p>
 
             <div class="search-row">
-                <input type="search" id="searchInput" placeholder="උදා: dhamma / ධර්මය / dharmaya"
+                <input type="search" id="searchInput" placeholder="උදා: nibbāna / නිබ්බාන"
                     autocomplete="off" spellcheck="false">
                 <button type="button" id="searchBtn" class="btn primary">සොයන්න</button>
                 <button type="button" id="clearBtn" class="btn secondary">මකන්න</button>
@@ -99,11 +93,12 @@
 
             <div class="quick-title">ඉක්මන් සෙවීම්</div>
             <div class="quick-searches">
-                <button type="button" data-word="dhamma">dhamma</button>
-                <button type="button" data-word="citta">citta</button>
                 <button type="button" data-word="nibbana">nibbana</button>
-                <button type="button" data-word="ධර්මය">ධර්මය</button>
-                <button type="button" data-word="dharmaya">dharmaya</button>
+                <button type="button" data-word="citta">citta</button>
+                <button type="button" data-word="dhamma">dhamma</button>
+                <button type="button" data-word="parinibbanti">parinibbanti</button>
+                <button type="button" data-word="bhikkhu">bhikkhu</button>
+                <button type="button" data-word="නිබ්බනා">නිබ්බනා</button>
             </div>
 
         </section>
@@ -134,41 +129,8 @@
 
     </main>
 
-    <!-- Sign-in modal -->
-    <div id="authModal" class="auth-modal">
-        <div class="auth-modal-box">
-            <button type="button" class="auth-modal-close" id="authCloseBtn">&times;</button>
-            <h3>පිවිසුම</h3>
-            <form id="authForm" autocomplete="on">
-                <label>
-                    Email
-                    <input type="email" id="authEmail" required autocomplete="email" placeholder="you@example.com">
-                </label>
-                <label>
-                    මුරපදය
-                    <input type="password" id="authPass" required autocomplete="current-password" placeholder="••••••••">
-                </label>
-                <div id="authError" class="auth-error"></div>
-                <button type="submit" class="btn primary" style="width:100%">පිවිසෙන්න</button>
-            </form>
-        </div>
-    </div>
-
-    <footer class="stats" id="stats">
-        <a href="offline.html" class="admin-link">Offline පිටුව</a>
-        <a href="editor.html" class="admin-link">සංස්කරණය</a>
-        <a href="admin.html" class="admin-link">පරිපාලක සංස්කරණය (legacy)</a>
-    </footer>
-
-    <script src="js/firebase-config.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-    <script src="js/normalize.js" defer></script>
-    <script src="js/db.js" defer></script>
-    <script src="js/auth.js" defer></script>
-    <script src="js/search.js" defer></script>
-    <script src="js/app.js" defer></script>
+    <footer class="stats" id="stats"><a href="admin.html" class="admin-link">පරිපාලක සංස්කරණය</a></footer>
+    <script src="js/offline-dictionary.js" defer></script>
 
 </body>
 

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>වචන විස්තරය · Pali–Sinhala Dictionary — dictionary.suththa.org</title>
+    <meta name="robots" content="noindex, follow">
+    <link rel="canonical" href="https://dictionary.suththa.org/entry.html">
+
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="assets/favicon-192.png">
+
+    <link rel="stylesheet" href="css/offline-dictionary.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+
+<body>
+
+    <nav class="sitenav" aria-label="suththa.org">
+        <div class="sitenav-inner">
+            <a class="sitenav-brand" href="https://suththa.org/">
+                <img src="assets/logo.svg" alt="" width="22" height="22">
+                <span>සුත්ත<span class="sitenav-dot">.org</span></span>
+            </a>
+            <a class="sitenav-link" href="index.html">ශබ්දකෝෂය</a>
+            <a class="sitenav-link" href="https://suththa.org/">මුල් පිටුව</a>
+        </div>
+    </nav>
+
+    <header class="topbar">
+        <div>
+            <h1>වචන විස්තරය</h1>
+            <p class="subtitle">Pāli–Sinhala Dictionary · dictionary.suththa.org</p>
+        </div>
+        <div class="topbar-right">
+            <div id="authBar" class="auth-bar"></div>
+            <a href="index.html" class="btn small secondary">සෙවීමට</a>
+        </div>
+    </header>
+
+    <main class="wrap wrap-single">
+
+        <section class="panel">
+            <div id="entryContent">
+                <div class="empty">වචනය පූරණය වෙමින්...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="stats" id="stats">
+        <a href="offline.html" class="admin-link">Offline පිටුව</a>
+    </footer>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="js/normalize.js" defer></script>
+    <script src="js/db.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/entry.js" defer></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var params = new URLSearchParams(window.location.search);
+        var wordId = params.get("id") || params.get("w");
+
+        if (!wordId) {
+            document.getElementById("entryContent").innerHTML =
+                '<div class="empty">වචන ID එක සපයා නොමැත. <a href="index.html">ශබ්දකෝෂයට යන්න.</a></div>';
+            return;
+        }
+
+        Dict.db.init();
+        Dict.auth.init();
+        Dict.auth.onAuthChange(function(a) {
+            var bar = document.getElementById("authBar");
+            if (bar) {
+                if (a.user && !a.isPublic) {
+                    bar.innerHTML = '<span class="auth-email">' + (a.email || '') + '</span>' +
+                        '<span class="auth-role-badge">' + (a.roleLabel || '') + '</span>';
+                    bar.innerHTML += ' <a href="dashboard.html" class="btn small secondary">කාර්ය පුවරුව</a>';
+                    if (a.isEditor && wordId) {
+                        bar.innerHTML += ' <a href="editor.html?id=' + encodeURIComponent(wordId) + '" class="btn small primary">සංස්කරණය</a>';
+                    }
+                    if (a.isReviewer) {
+                        bar.innerHTML += ' <a href="review.html" class="btn small primary">සමාලෝචනය</a>';
+                    }
+                } else {
+                    bar.innerHTML = '<a href="login.html" class="btn small primary">පිවිසුම</a>';
+                }
+            }
+        });
+
+        document.title = esc(wordId) + " · වචන විස්තරය — dictionary.suththa.org";
+
+        Dict.entry.loadWord(wordId).then(function(r) {
+            if (r.note === "not_configured") {
+                document.getElementById("entryContent").innerHTML =
+                    '<div class="empty">Firebase සැකසුම නොමැත. <a href="offline.html">offline පිටුව</a></div>';
+                return;
+            }
+            Dict.entry.renderEntryPage(r.word);
+        });
+
+        function esc(v) { return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+    });
+    </script>
+
+</body>
+
+</html>

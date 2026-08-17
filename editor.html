@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>සංස්කරණය · Pali–Sinhala Dictionary — dictionary.suththa.org</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://dictionary.suththa.org/editor.html">
+
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="assets/favicon-192.png">
+
+    <link rel="stylesheet" href="css/offline-dictionary.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+
+<body>
+
+    <nav class="sitenav" aria-label="suththa.org">
+        <div class="sitenav-inner">
+            <a class="sitenav-brand" href="https://suththa.org/">
+                <img src="assets/logo.svg" alt="" width="22" height="22">
+                <span>සුත්ත<span class="sitenav-dot">.org</span></span>
+            </a>
+            <a class="sitenav-link" href="index.html">ශබ්දකෝෂය</a>
+            <a class="sitenav-link" href="https://suththa.org/">මුල් පිටුව</a>
+        </div>
+    </nav>
+
+    <header class="topbar">
+        <div>
+            <h1>සංස්කරණය</h1>
+            <p class="subtitle">Pāli–Sinhala Dictionary · dictionary.suththa.org</p>
+        </div>
+        <div class="topbar-right">
+            <div id="authBar" class="auth-bar"></div>
+        </div>
+    </header>
+
+    <main class="wrap wrap-single">
+
+        <section class="panel">
+
+            <div id="editorMessage" class="editor-message"></div>
+
+            <form id="editorForm" class="editor-form" style="display:none">
+                <h2 id="editorTitle">නව වචනයක්</h2>
+
+                <div class="form-group">
+                    <label for="headword">පාලි හිස්වචනය <span class="required">*</span></label>
+                    <input type="text" id="headword" required placeholder="e.g. dhamma" autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="headwordSi">සිංහල හිස්වචනය</label>
+                    <input type="text" id="headwordSi" placeholder="e.g. ධර්මය" autocomplete="off">
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h3>අර්ථ <span class="hint">(අවම වශයෙන් එකක්)</span></h3>
+                        <button type="button" id="addMeaningBtn" class="btn small">+ එක් කරන්න</button>
+                    </div>
+                    <div id="meaningsContainer"></div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h3>පද විභාග</h3>
+                        <button type="button" id="addFormBtn" class="btn small">+ එක් කරන්න</button>
+                    </div>
+                    <div id="formsContainer"></div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h3>උදාහරණ</h3>
+                        <button type="button" id="addExampleBtn" class="btn small">+ එක් කරන්න</button>
+                    </div>
+                    <div id="examplesContainer"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">සටහන්</label>
+                    <textarea id="notes" rows="3" placeholder="සමාලෝචකයාට අමතර තොරතුරු..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="saveDraftBtn" class="btn primary">සුරකින්න</button>
+                    <button type="button" id="submitBtn" class="btn primary" disabled>සමාලෝචනයට යවන්න</button>
+                    <span id="editorSaveStatus" class="editor-save-status"></span>
+                </div>
+            </form>
+
+        </section>
+
+    </main>
+
+    <footer class="stats" id="stats">
+        <a href="offline.html" class="admin-link">Offline පිටුව</a>
+    </footer>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="js/normalize.js" defer></script>
+    <script src="js/db.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/editor.js" defer></script>
+
+</body>
+
+</html>

@@ -2,6 +2,13 @@
 data/corrections.json
 data/admin-pass.json
 
+# Firebase local config (never commit)
+js/firebase-config.js
+
+# Firebase Admin service-account key (NEVER commit)
+tools/service-account.json
+service-account.json
+
 # Python
 __pycache__/
 *.py[cod]

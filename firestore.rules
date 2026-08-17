@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isActiveUser() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+
+    function hasRole(role) {
+      return isActiveUser() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function isAdmin() { return hasRole('admin'); }
+    function isEditor() { return hasRole('editor') || isAdmin(); }
+    function isReviewer() { return hasRole('reviewer') || isAdmin(); }
+
+    function isValidRole(r) {
+      return r == 'admin' || r == 'editor' || r == 'reviewer';
+    }
+
+    // ── users ────────────────────────────────────────────────
+    // Admin-only writes. Clients must NEVER modify their own role.
+    // Only admins (via manage_users.py) set roles.
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── sources ──────────────────────────────────────────────
+
+    match /sources/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── words ────────────────────────────────────────────────
+    // Editors create drafts; reviewers update on approval.
+
+    match /words/{id} {
+      allow read: if true;
+      allow create: if isEditor();
+      allow update: if isEditor() || isReviewer();
+      allow delete: if isAdmin();
+    }
+
+    // ── wordMeanings ─────────────────────────────────────────
+    // Reviewers write on approval.
+
+    match /wordMeanings/{id} {
+      allow read: if true;
+      allow create, update: if isEditor() || isReviewer();
+      allow delete: if isAdmin();
+    }
+
+    // ── wordForms ────────────────────────────────────────────
+
+    match /wordForms/{id} {
+      allow read: if true;
+      allow create, update: if isEditor() || isReviewer();
+      allow delete: if isAdmin();
+    }
+
+    // ── examples ─────────────────────────────────────────────
+
+    match /examples/{id} {
+      allow read: if true;
+      allow create, update: if isEditor() || isReviewer();
+      allow delete: if isAdmin();
+    }
+
+    // ── searchIndex ──────────────────────────────────────────
+
+    match /searchIndex/{id} {
+      allow read: if true;
+      allow create, update: if isEditor() || isReviewer();
+      allow delete: if isAdmin();
+    }
+
+    // ── submissions ──────────────────────────────────────────
+    // Editors: create + update own drafts/changes_requested.
+    // Reviewers: update others' submissions (approve/reject/request_changes).
+    // Self-review prevented: reviewer cannot update own submission.
+
+    match /submissions/{id} {
+      allow read: if signedIn();
+      allow create: if isEditor() &&
+        request.resource.data.submittedBy == request.auth.uid;
+      allow update: if (isReviewer() &&
+                         resource.data.submittedBy != request.auth.uid) ||
+        (isEditor() &&
+         (resource.data.status == 'draft' || resource.data.status == 'changes_requested') &&
+         resource.data.submittedBy == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // ── reviews ──────────────────────────────────────────────
+    // Append-only action log. Immutable.
+
+    match /reviews/{id} {
+      allow read: if signedIn();
+      allow create: if isReviewer();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ── versions ─────────────────────────────────────────────
+    // Immutable history — append-only. Admins may delete.
+
+    match /versions/{id} {
+      allow read: if signedIn();
+      allow create: if isEditor() || isReviewer();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+  }
+}
