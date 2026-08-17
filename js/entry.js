@@ -3,46 +3,20 @@
 window.Dict = window.Dict || {};
 Dict.entry = Dict.entry || {};
 
+// ── Load word via hybrid resolver ───────────────────────────
+
 async function loadWord(wordId) {
-    if (!Dict.db.init() || !Dict.db.isAvailable()) {
-        return { word: null, note: "not_configured" };
-    }
-
     try {
-        const C = Dict.db.COLLECTIONS;
-        const wordSnap = await Dict.db.docRef(C.words, wordId).get();
-        if (!wordSnap.exists) return { word: null, note: "missing" };
-
-        const word = { id: wordSnap.id, ...wordSnap.data() };
-
-        // Load related sub-collections in parallel
-        const [meaningsSnap, formsSnap, examplesSnap] = await Promise.all([
-            Dict.db.col(C.wordMeanings).where("wordId", "==", wordId).orderBy("order").get(),
-            Dict.db.col(C.wordForms).where("wordId", "==", wordId).orderBy("order").get(),
-            Dict.db.col(C.examples).where("wordId", "==", wordId).orderBy("order").get(),
-        ]);
-
-        word.meanings = [];
-        meaningsSnap.forEach(function(d) {
-            word.meanings.push({ id: d.id, ...d.data() });
-        });
-
-        word.forms = [];
-        formsSnap.forEach(function(d) {
-            word.forms.push({ id: d.id, ...d.data() });
-        });
-
-        word.examples = [];
-        examplesSnap.forEach(function(d) {
-            word.examples.push({ id: d.id, ...d.data() });
-        });
-
-        return { word: word, note: "ok" };
+        var resolved = await Dict.resolver.getDisplayEntry(wordId);
+        if (!resolved) return { word: null, note: "missing" };
+        return { word: resolved, note: "ok" };
     } catch (error) {
         console.warn("[entry] load failed:", error);
         return { word: null, note: "error" };
     }
 }
+
+// ── Load versions from Firestore ────────────────────────────
 
 async function loadVersions(wordId) {
     if (!Dict.db.init() || !Dict.db.isAvailable()) {
@@ -50,14 +24,14 @@ async function loadVersions(wordId) {
     }
 
     try {
-        const snap = await Dict.db
+        var snap = await Dict.db
             .col(Dict.db.COLLECTIONS.versions)
             .where("wordId", "==", wordId)
             .orderBy("createdAt", "desc")
             .limit(50)
             .get();
 
-        const versions = [];
+        var versions = [];
         snap.forEach(function(d) {
             versions.push({ id: d.id, ...d.data() });
         });
@@ -75,6 +49,8 @@ function esc(value) {
         .replace(/>/g, "&gt;");
 }
 
+// ── Render entry page ───────────────────────────────────────
+
 function renderEntryPage(word) {
     var el = document.getElementById("entryContent");
     if (!el) return;
@@ -86,6 +62,14 @@ function renderEntryPage(word) {
 
     var html = "";
 
+    // Source indicator
+    var sourceLabel = "";
+    if (word._static) {
+        sourceLabel = '<span class="entry-source-tag">මූලික ශබ්දකෝෂය</span>';
+    } else if (word.overridden) {
+        sourceLabel = '<span class="entry-source-tag override">සංස්කරණය කළ</span>';
+    }
+
     // Headword
     html += '<div class="entry-head">';
     html += '<h2 class="entry-word">' + esc(word.headword || word.headwordSi || word.id) + '</h2>';
@@ -93,6 +77,7 @@ function renderEntryPage(word) {
         html += '<div class="entry-word-si">' + esc(word.headwordSi) + '</div>';
     }
     html += '<span class="entry-status status-' + esc(word.status || 'published') + '">' + esc(word.status || "published") + '</span>';
+    if (sourceLabel) html += ' ' + sourceLabel;
     html += '</div>';
 
     // Meanings

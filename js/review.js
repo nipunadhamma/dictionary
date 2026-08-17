@@ -550,6 +550,31 @@ async function openSubmissionDetail(subId) {
     var sub = result.submission;
     var after = sub.after || {};
     var before = sub.before || null;
+
+    // For static entry edits, load the static base as "before" if missing
+    if (!before && sub.type === "edit" && sub.wordId) {
+        try {
+            var staticEntry = await Dict.static.getEntryByWordId(sub.wordId);
+            if (staticEntry) {
+                var meanings = (staticEntry.meanings || []).map(function(m, i) {
+                    return { si: m.si || "", sourceId: m.src || "", grammar: null, order: i };
+                });
+                before = {
+                    headword: staticEntry.r || "",
+                    headwordSi: staticEntry.w || "",
+                    headwordNorm: Dict.normalize.normSearch(staticEntry.r || ""),
+                    meanings: meanings,
+                    forms: [],
+                    examples: [],
+                    notes: "",
+                    _source: "static",
+                };
+            }
+        } catch (e) {
+            console.warn("[review] static base load failed:", e);
+        }
+    }
+
     var reviews = await loadReviews(subId);
 
     var html = '';
@@ -694,6 +719,10 @@ async function openSubmissionDetail(subId) {
 
 function renderSnapshot(snap) {
     var html = '<div class="review-snapshot">';
+
+    if (snap._source === "static") {
+        html += '<div class="review-snapshot-source">මූලික ශබ්දකෝෂයෙන්</div>';
+    }
 
     html += '<div class="review-snapshot-field">';
     html += '<span class="review-snapshot-label">පාලි:</span> ' + esc(snap.headword || "—");

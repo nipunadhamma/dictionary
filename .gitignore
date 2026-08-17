@@ -2,6 +2,9 @@
 data/corrections.json
 data/admin-pass.json
 
+# Generated static dictionary data (regenerate with: node tools/build-static.js)
+data/dictionary/
+
 # Firebase local config (never commit)
 js/firebase-config.js
 

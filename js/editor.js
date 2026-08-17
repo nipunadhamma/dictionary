@@ -74,42 +74,59 @@ async function loadSubmission(id) {
 }
 
 async function loadWordForEdit(wordId) {
-    if (!Dict.db.init() || !Dict.db.isAvailable()) {
-        return { word: null, note: "not_configured" };
+    // Try Firestore first
+    if (Dict.db.init() && Dict.db.isAvailable()) {
+        try {
+            var C = Dict.db.COLLECTIONS;
+            var wordSnap = await Dict.db.docRef(C.words, wordId).get();
+            if (wordSnap.exists) {
+                var word = { id: wordSnap.id, ...wordSnap.data() };
+                var results = await Promise.all([
+                    Dict.db.col(C.wordMeanings).where("wordId", "==", wordId).orderBy("order").get(),
+                    Dict.db.col(C.wordForms).where("wordId", "==", wordId).orderBy("order").get(),
+                    Dict.db.col(C.examples).where("wordId", "==", wordId).orderBy("order").get(),
+                ]);
+                word.meanings = [];
+                results[0].forEach(function (d) { word.meanings.push({ id: d.id, ...d.data() }); });
+                word.forms = [];
+                results[1].forEach(function (d) { word.forms.push({ id: d.id, ...d.data() }); });
+                word.examples = [];
+                results[2].forEach(function (d) { word.examples.push({ id: d.id, ...d.data() }); });
+                return { word: word, note: "ok", source: "firestore" };
+            }
+        } catch (error) {
+            console.warn("[editor] Firestore loadWordForEdit failed:", error);
+        }
     }
+
+    // Fall back to static entry
     try {
-        var C = Dict.db.COLLECTIONS;
-        var wordSnap = await Dict.db.docRef(C.words, wordId).get();
-        if (!wordSnap.exists) return { word: null, note: "missing" };
-
-        var word = { id: wordSnap.id, ...wordSnap.data() };
-
-        var results = await Promise.all([
-            Dict.db.col(C.wordMeanings).where("wordId", "==", wordId).orderBy("order").get(),
-            Dict.db.col(C.wordForms).where("wordId", "==", wordId).orderBy("order").get(),
-            Dict.db.col(C.examples).where("wordId", "==", wordId).orderBy("order").get(),
-        ]);
-
-        word.meanings = [];
-        results[0].forEach(function (d) {
-            word.meanings.push({ id: d.id, ...d.data() });
-        });
-
-        word.forms = [];
-        results[1].forEach(function (d) {
-            word.forms.push({ id: d.id, ...d.data() });
-        });
-
-        word.examples = [];
-        results[2].forEach(function (d) {
-            word.examples.push({ id: d.id, ...d.data() });
-        });
-
-        return { word: word, note: "ok" };
+        var staticEntry = await Dict.static.getEntryByWordId(wordId);
+        if (staticEntry) {
+            var meanings = (staticEntry.meanings || []).map(function(m, i) {
+                return { si: m.si || "", sourceId: m.src || "", grammar: null, order: i };
+            });
+            return {
+                word: {
+                    id: staticEntry.id,
+                    headword: staticEntry.r || "",
+                    headwordSi: staticEntry.w || "",
+                    headwordNorm: Dict.normalize.normSearch(staticEntry.r || ""),
+                    meanings: meanings,
+                    forms: [],
+                    examples: [],
+                    status: "published",
+                    source: "static",
+                },
+                note: "ok",
+                source: "static",
+            };
+        }
     } catch (error) {
-        console.warn("[editor] loadWordForEdit failed:", error);
-        return { word: null, note: "error" };
+        console.warn("[editor] static loadWordForEdit failed:", error);
     }
+
+    return { word: null, note: "missing" };
 }
 
 // ── Validation ─────────────────────────────────────────────
