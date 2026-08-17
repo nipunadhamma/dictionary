@@ -52,7 +52,8 @@ function singlish(text) {
 }
 
 function genId(r) {
-    var h = crypto.createHash("sha256").update(normSearch(r)).digest("hex");
+    var raw = String(r||"").normalize("NFC").trim();
+    var h = crypto.createHash("sha256").update(raw).digest("hex");
     return "w_" + h.slice(0,16);
 }
 

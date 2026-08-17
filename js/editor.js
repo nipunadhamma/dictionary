@@ -32,9 +32,9 @@ function esc(value) {
 }
 
 async function generateWordId(headwordNorm) {
-    var normalized = Dict.normalize.normSearch(headwordNorm);
+    var raw = String(headwordNorm || "").normalize("NFC").trim();
     var encoder = new TextEncoder();
-    var data = encoder.encode(normalized);
+    var data = encoder.encode(raw);
     var hashBuffer = await crypto.subtle.digest("SHA-256", data);
     var hashArray = Array.from(new Uint8Array(hashBuffer));
     var hashHex = hashArray.map(function (b) {
