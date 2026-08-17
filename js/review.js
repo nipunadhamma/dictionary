@@ -105,6 +105,8 @@ function buildSearchIndex(wordId, after) {
         });
     }
 
+    var headwordSi = Dict.normalize.normSearch(after.headwordSi || "");
+
     var slAll = [];
     if (after.headwordSi) {
         slAll = Dict.normalize.singlishTokens(after.headwordSi);
@@ -124,6 +126,7 @@ function buildSearchIndex(wordId, after) {
         siAll: siAll,
         slAll: slAll,
         all: uniqueAll,
+        headwordSi: headwordSi,
         sources: [],
     };
 }

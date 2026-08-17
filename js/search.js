@@ -10,6 +10,8 @@ const MATCH_SINHALA = "sinhala";
 const MATCH_SINGLISH = "singlish";
 const MATCH_MEANING = "meaning";
 
+const XREF_MAX_CHUNKS = 10;
+
 Dict.search.MATCH = {
     PALI: MATCH_PALI,
     SINHALA: MATCH_SINHALA,
@@ -92,6 +94,105 @@ async function staticSearchMeaning(prefix) {
         console.warn("[search] static mi failed:", e);
         return [];
     }
+}
+
+// ── Cross-script reference ──────────────────────────────────
+// Given primary results from one script, find matching entries
+// in the opposite-script static index using headword fields.
+// Only loads chunks for the current page's results (not all primary results).
+
+function _xrefPali(primaryResults) {
+    var headwords = {};
+    primaryResults.forEach(function(r) {
+        var w = r._w || r.si || "";
+        if (w && !headwords[w]) headwords[w] = r;
+    });
+
+    var prefixMap = {};
+    Object.keys(headwords).forEach(function(w) {
+        var ck = Dict.static.safeKey(Dict.normalize.normSinhala(w), 2);
+        if (!prefixMap[ck]) prefixMap[ck] = [];
+        prefixMap[ck].push({ hw: w, primary: headwords[w] });
+    });
+
+    var prefixes = Object.keys(prefixMap);
+    if (prefixes.length === 0) return [];
+
+    return Promise.all(
+        prefixes.slice(0, XREF_MAX_CHUNKS).map(function(ck) {
+            return Dict.static.getIndexChunk("si", ck).then(function(chunk) {
+                if (!chunk) return [];
+                var results = [];
+                prefixMap[ck].forEach(function(entry) {
+                    var normW = Dict.normalize.normSinhala(entry.hw);
+                    Object.keys(chunk).forEach(function(key) {
+                        if (key.indexOf(normW) !== 0) return;
+                        chunk[key].forEach(function(item) {
+                            results.push({
+                                id: item.id,
+                                headword: item.r || "",
+                                si: item.w || "",
+                                wordId: item.id,
+                                match: MATCH_PALI,
+                                _source: "xref",
+                                _xrefPrimary: entry.primary.headword || "",
+                            });
+                        });
+                    });
+                });
+                return results;
+            });
+        })
+    ).then(function(arrays) {
+        return arrays.reduce(function(a, b) { return a.concat(b); }, []);
+    });
+}
+
+function _xrefSinhala(primaryResults) {
+    var headwords = {};
+    primaryResults.forEach(function(r) {
+        var pal = r.headword || r.r || "";
+        if (pal && !headwords[pal]) headwords[pal] = r;
+    });
+
+    var prefixMap = {};
+    Object.keys(headwords).forEach(function(pal) {
+        var ck = Dict.static.safeKey(Dict.normalize.normSearch(pal), 2);
+        if (!prefixMap[ck]) prefixMap[ck] = [];
+        prefixMap[ck].push({ hw: pal, primary: headwords[pal] });
+    });
+
+    var prefixes = Object.keys(prefixMap);
+    if (prefixes.length === 0) return [];
+
+    return Promise.all(
+        prefixes.slice(0, XREF_MAX_CHUNKS).map(function(ck) {
+            return Dict.static.getIndexChunk("pali", ck).then(function(chunk) {
+                if (!chunk) return [];
+                var results = [];
+                prefixMap[ck].forEach(function(entry) {
+                    var normP = Dict.normalize.normSearch(entry.hw);
+                    Object.keys(chunk).forEach(function(key) {
+                        if (key.indexOf(normP) !== 0) return;
+                        chunk[key].forEach(function(item) {
+                            results.push({
+                                id: item.id,
+                                headword: item.r || "",
+                                si: item.w || "",
+                                wordId: item.id,
+                                match: MATCH_SINHALA,
+                                _source: "xref",
+                                _xrefPrimary: entry.primary.si || "",
+                            });
+                        });
+                    });
+                });
+                return results;
+            });
+        })
+    ).then(function(arrays) {
+        return arrays.reduce(function(a, b) { return a.concat(b); }, []);
+    });
 }
 
 // ── Firestore search functions ──────────────────────────────
@@ -199,7 +300,7 @@ function normalizeStaticResult(item, matchType) {
     return {
         id: item.id,
         headword: item.r || "",
-        si: "",
+        si: item.headwordSi || item.w || "",
         wordId: item.id,
         match: matchType,
         _source: "static",
@@ -232,6 +333,9 @@ function mergeAndDedupe(staticResults, fsResults, matchType) {
 // ── Main search ─────────────────────────────────────────────
 // Returns { plan, results, cursor, note, _staticTotal }
 
+var _staticCacheKey = "";
+var _staticCacheResults = [];
+
 async function search(raw, opts) {
     var plan = planQuery(raw, opts);
     if (!plan) return { plan: null, results: [], cursor: null, note: "empty" };
@@ -240,12 +344,12 @@ async function search(raw, opts) {
     var rawLower = Dict.normalize.normPali(plan.raw);
     var staticOffset = (opts && opts._staticOffset) || 0;
 
-    // ── Static search (first page only) ──
-    var staticResults = [];
-    if (!lastDoc) {
+    // ── Static search (cached per prefix+mode) ──
+    var cacheKey = plan.prefix + "|" + plan.mode;
+    if (_staticCacheKey !== cacheKey) {
+        var staticResults = [];
         if (plan.mode === MATCH_PALI) {
             staticResults = await staticSearchPali(plan.prefix);
-            // Also try singlish on static
             var slStatic = await staticSearchSinglish(plan.prefix);
             staticResults = mergeAndDedupe(staticResults, slStatic.map(function(r) {
                 return normalizeStaticResult(r, MATCH_SINGLISH);
@@ -264,7 +368,12 @@ async function search(raw, opts) {
             r.match = r.match || plan.mode;
             return r;
         });
+
+        _staticCacheKey = cacheKey;
+        _staticCacheResults = staticResults;
     }
+
+    var staticResults = _staticCacheResults;
 
     // ── Firestore search ──
     var fsResult = { results: [], cursor: null };
@@ -287,13 +396,31 @@ async function search(raw, opts) {
         plan.mode
     );
 
+    // ── Cross-script reference (page 1 only) ──
+    if (!lastDoc && (plan.mode === MATCH_PALI || plan.mode === MATCH_SINHALA)) {
+        var page = allResults.slice(0, PAGE_SIZE);
+        try {
+            var xref;
+            if (plan.mode === MATCH_PALI) {
+                xref = await _xrefPali(page);
+            } else {
+                xref = await _xrefSinhala(page);
+            }
+            if (xref.length) {
+                allResults = dedupeById(page.concat(xref)).concat(allResults.slice(PAGE_SIZE));
+            }
+        } catch (e) {
+            console.warn("[search] cross-ref failed:", e);
+        }
+    }
+
     return {
         plan: plan,
         results: allResults.slice(0, PAGE_SIZE),
         cursor: fsResult.cursor,
         note: "ok",
         _staticTotal: staticResults.length,
-        _staticOffset: staticOffset + Math.min(allResults.length, PAGE_SIZE),
+        _staticOffset: staticOffset + Math.min(staticResults.length - staticOffset, PAGE_SIZE),
     };
 }
 

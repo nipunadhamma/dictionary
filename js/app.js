@@ -12,6 +12,7 @@ let currentCursor = null;
 let currentPlan = null;
 let isLoadingMore = false;
 let hasMore = false;
+let staticOffset = 0;
 
 function esc(value) {
     return String(value ?? "")
@@ -43,6 +44,7 @@ function resetPagination() {
     currentPlan = null;
     hasMore = false;
     isLoadingMore = false;
+    staticOffset = 0;
 }
 
 function renderResults(items, query) {
@@ -65,11 +67,10 @@ function renderResults(items, query) {
             const id = it.wordId || it.id;
             return `
             <div class="result-item" data-index="${i}">
-                <a href="entry.html?id=${encodeURIComponent(id)}" class="result-link">
-                    <div class="result-pali">${esc(word)}</div>
-                </a>
+                <div class="result-pali">${esc(word)}</div>
                 <div class="result-roman">${matchLabel[it.match] || ""}</div>
                 ${si ? `<div class="result-sinhala">${esc(si)}</div>` : ""}
+                <a href="entry.html?id=${encodeURIComponent(id)}" class="result-link" title="සම්පූර්ණ පිටුව">→</a>
             </div>`;
         })
         .join("");
@@ -88,6 +89,8 @@ function renderResults(items, query) {
     resultsEl.querySelectorAll(".result-item").forEach((el) => {
         el.addEventListener("click", (e) => {
             if (e.target.closest(".result-link")) return;
+            resultsEl.querySelectorAll(".result-item.active").forEach(function(a) { a.classList.remove("active"); });
+            el.classList.add("active");
             const idx = Number(el.dataset.index);
             renderDetail(currentResults[idx]);
         });
@@ -97,17 +100,54 @@ function renderResults(items, query) {
     if (loadMoreBtn) loadMoreBtn.addEventListener("click", loadMore);
 }
 
-function renderDetail(item) {
+async function renderDetail(item) {
     if (!item) {
         detailEl.innerHTML = `<div class="empty">වචනයක් තෝරන්න.</div>`;
         return;
     }
+    const word = item.headword || item.pali || item.id;
+    const si = item.si || "";
+    const id = item.wordId || item.id;
+
     detailEl.innerHTML = `
-        <div class="detail-pali">${esc(item.headword || item.pali || item.id)}</div>
-        <div class="detail-roman">${item.match || ""}</div>
+        <div class="detail-pali">${esc(word)}</div>
+        ${si ? `<div class="detail-sinhala">${esc(si)}</div>` : ""}
         <div class="meaning-block">
-            <div class="meaning-text">${esc(item.si || "—")}</div>
+            <h3>අර්ථ</h3>
+            <div class="detail-loading">ලබාගන්නවා...</div>
         </div>`;
+
+    try {
+        if (!Dict.resolver || !Dict.resolver.getDisplayEntry) {
+            throw new Error("resolver not loaded");
+        }
+        const resolved = await Dict.resolver.getDisplayEntry(id);
+        if (resolved && resolved.meanings && resolved.meanings.length) {
+            let html = resolved.meanings.map(function(m) {
+                let s = '<div class="meaning-item">';
+                s += '<div class="meaning-text">' + esc(m.si || "—") + "</div>";
+                if (m.sourceId) s += '<span class="meaning-source">' + esc(m.sourceId) + "</span>";
+                s += "</div>";
+                return s;
+            }).join("");
+            detailEl.innerHTML =
+                '<div class="detail-pali">' + esc(resolved.headword || word) + "</div>" +
+                (resolved.headwordSi ? '<div class="detail-sinhala">' + esc(resolved.headwordSi) + "</div>" : (si ? '<div class="detail-sinhala">' + esc(si) + "</div>" : "")) +
+                '<div class="meaning-block"><h3>අර්ථ</h3>' + html + "</div>";
+        } else {
+            detailEl.innerHTML =
+                '<div class="detail-pali">' + esc(word) + "</div>" +
+                (si ? '<div class="detail-sinhala">' + esc(si) + "</div>" : "") +
+                '<div class="meaning-block"><div class="meaning-text">—</div></div>';
+        }
+    } catch (err) {
+        console.warn("[app] detail resolve:", err);
+        detailEl.innerHTML =
+            '<div class="detail-pali">' + esc(word) + "</div>" +
+            (si ? '<div class="detail-sinhala">' + esc(si) + "</div>" : "") +
+            '<div class="meaning-block"><div class="meaning-text">—</div></div>' +
+            '<div class="detail-hint"><a href="entry.html?id=' + encodeURIComponent(id) + '">සම්පූර්ණ පිටුව →</a></div>';
+    }
 }
 
 function showNotConfigured() {
@@ -219,6 +259,7 @@ async function run() {
         currentResults = res.results;
         currentCursor = res.cursor;
         hasMore = res.results.length >= Dict.search.PAGE_SIZE;
+        staticOffset = res._staticOffset || 0;
         setStatus("");
         renderResults(currentResults, q);
     } catch (err) {
@@ -229,13 +270,14 @@ async function run() {
 }
 
 async function loadMore() {
-    if (isLoadingMore || !hasMore || !currentCursor || !currentPlan) return;
+    if (isLoadingMore || !hasMore || !currentPlan) return;
     isLoadingMore = true;
     renderResults(currentResults, searchInput.value.trim());
     try {
         const res = await Dict.search.search(currentPlan.raw, {
             byMeaning: currentPlan.mode === Dict.search.MATCH.MEANING,
             lastDoc: currentCursor,
+            _staticOffset: staticOffset,
         });
         if (res.note === "ok" && res.results.length > 0) {
             const seen = new Set(currentResults.map((r) => r.id));
@@ -248,6 +290,7 @@ async function loadMore() {
         }
         currentCursor = res.cursor;
         hasMore = res.results.length >= Dict.search.PAGE_SIZE;
+        staticOffset = res._staticOffset || 0;
     } catch (err) {
         console.error("[app] loadMore error:", err);
     } finally {

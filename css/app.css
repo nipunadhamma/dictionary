@@ -157,6 +157,41 @@ footer.stats a {
     color: var(--accent);
 }
 
+.result-link {
+    font-size: 14px;
+    color: var(--accent);
+    opacity: 0.6;
+    margin-left: 4px;
+}
+
+.result-link:hover {
+    opacity: 1;
+}
+
+/* ---------- detail panel ---------- */
+
+.detail-sinhala {
+    font-size: 18px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.detail-loading {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.detail-hint {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.detail-hint a {
+    color: var(--accent);
+}
+
 /* ---------- entry page ---------- */
 
 .entry-head {
