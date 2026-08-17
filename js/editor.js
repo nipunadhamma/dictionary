@@ -61,16 +61,121 @@ function setMessage(text, type) {
 
 async function loadSubmission(id) {
     if (!Dict.db.init() || !Dict.db.isAvailable()) {
+        console.error("[editor] loadSubmission: Firebase not configured or unavailable");
         return { submission: null, note: "not_configured" };
     }
     try {
         var snap = await Dict.db.docRef(Dict.db.COLLECTIONS.submissions, id).get();
-        if (!snap.exists) return { submission: null, note: "missing" };
+        if (!snap.exists) {
+            console.error("[editor] loadSubmission: document does not exist for id=" + id);
+            return { submission: null, note: "missing" };
+        }
         return { submission: { id: snap.id, ...snap.data() }, note: "ok" };
     } catch (error) {
-        console.warn("[editor] loadSubmission failed:", error);
-        return { submission: null, note: "error" };
+        console.error("[editor] loadSubmission failed for id=" + id + ":", error.message || error, error.code || "", error);
+        return { submission: null, note: "error", detail: error.message || String(error) };
     }
+}
+
+// ── Changes-requested notification ─────────────────────────
+
+async function loadChangesRequestedSubmissions(uid) {
+    if (!Dict.db.init() || !Dict.db.isAvailable()) {
+        return [];
+    }
+    try {
+        var C = Dict.db.COLLECTIONS;
+        var snap = await Dict.db.col(C.submissions)
+            .where("submittedBy", "==", uid)
+            .where("status", "==", "changes_requested")
+            .get();
+        var results = [];
+        snap.forEach(function (doc) {
+            results.push({ id: doc.id, ...doc.data() });
+        });
+        results.sort(function (a, b) {
+            var ta = a.updatedAt || a.submittedAt || a.createdAt || "";
+            var tb = b.updatedAt || b.submittedAt || b.createdAt || "";
+            return tb.localeCompare(ta);
+        });
+        return results;
+    } catch (error) {
+        console.error("[editor] loadChangesRequestedSubmissions failed:", error.message || error, error.code || "", error);
+        return null;
+    }
+}
+
+function renderChangesNotification(submissions, uid) {
+    var container = document.getElementById("editorChangesList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!submissions || submissions.length === 0) return;
+
+    var panel = document.createElement("div");
+    panel.className = "editor-changes-list";
+
+    var header = document.createElement("div");
+    header.className = "editor-changes-header";
+    header.textContent = "⚠ වෙනස්කම් ඉල්ලා ඇත \u2014 " + submissions.length;
+    panel.appendChild(header);
+
+    var list = document.createElement("div");
+    list.className = "editor-change-items";
+
+    submissions.forEach(function (sub, idx) {
+        var item = document.createElement("div");
+        item.className = "editor-change-item";
+
+        var after = sub.after || {};
+        var headwordSi = after.headwordSi || "";
+        var headword = after.headword || "";
+        var displayLabel = headwordSi || headword || "(නම නැත)";
+        var reviewNote = sub.reviewNote || "";
+
+        var main = document.createElement("div");
+        main.className = "editor-change-main";
+
+        var num = document.createElement("span");
+        num.className = "editor-change-num";
+        num.textContent = (idx + 1) + ".";
+        main.appendChild(num);
+
+        var headEl = document.createElement("span");
+        headEl.className = "editor-change-headword";
+        headEl.textContent = displayLabel;
+        main.appendChild(headEl);
+
+        if (headwordSi && headword) {
+            var paliEl = document.createElement("span");
+            paliEl.className = "editor-change-pali";
+            paliEl.textContent = headword;
+            main.appendChild(paliEl);
+        }
+
+        item.appendChild(main);
+
+        if (reviewNote) {
+            var noteEl = document.createElement("div");
+            noteEl.className = "editor-change-note";
+            noteEl.textContent = reviewNote;
+            item.appendChild(noteEl);
+        }
+
+        var actionRow = document.createElement("div");
+        actionRow.className = "editor-change-action";
+        var btn = document.createElement("a");
+        btn.href = "editor.html?submission=" + encodeURIComponent(sub.id);
+        btn.className = "btn primary small";
+        btn.textContent = "නැවත සංස්කරණය කරන්න";
+        actionRow.appendChild(btn);
+        item.appendChild(actionRow);
+
+        list.appendChild(item);
+    });
+
+    panel.appendChild(list);
+    container.appendChild(panel);
 }
 
 async function loadWordForEdit(wordId) {
@@ -220,6 +325,78 @@ function buildAfterSnapshot(data) {
     };
 }
 
+// ── Save draft (core) ──────────────────────────────────────
+// Shared logic used by both saveDraft() and submitForReview() auto-save.
+// Does NOT manage isSubmitting — caller must handle that.
+
+async function _saveDraftCore(data, auth) {
+    var after = buildAfterSnapshot(data);
+    var now = new Date().toISOString();
+    var C = Dict.db.COLLECTIONS;
+
+    if (currentSubmissionId) {
+        await Dict.db.docRef(C.submissions, currentSubmissionId).update({
+            after: after,
+            updatedAt: now,
+        });
+    } else {
+        var wordId = currentWordId || await generateWordId(data.headwordNorm);
+
+        if (currentEditType === "create") {
+            var existing = await Dict.db.docRef(C.words, wordId).get();
+            if (existing.exists) {
+                throw new Error("මෙම වචනය දැනටමත් පවතී. සංස්කරණය කිරීමට editor.html?id=" + wordId + " වෙත යන්න.");
+            }
+
+            await Dict.db.docRef(C.words, wordId).set({
+                headword: data.headword,
+                headwordSi: data.headwordSi,
+                headwordNorm: data.headwordNorm,
+                status: "draft",
+                version: 0,
+                isPublished: false,
+                createdBy: auth.uid,
+                createdAt: now,
+                updatedBy: auth.uid,
+                updatedAt: now,
+            });
+        }
+
+        var before = null;
+        if (currentEditType === "edit" && existingWordSnapshot) {
+            before = {
+                headword: existingWordSnapshot.headword,
+                headwordSi: existingWordSnapshot.headwordSi,
+                headwordNorm: existingWordSnapshot.headwordNorm,
+                meanings: existingWordSnapshot.meanings || [],
+                forms: existingWordSnapshot.forms || [],
+                examples: existingWordSnapshot.examples || [],
+            };
+        }
+
+        var subRef = await Dict.db.col(C.submissions).add({
+            wordId: wordId,
+            type: currentEditType || "create",
+            status: "draft",
+            before: before,
+            after: after,
+            submittedBy: auth.uid,
+            submittedAt: null,
+            reviewedBy: null,
+            reviewedAt: null,
+            reviewNote: null,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        currentSubmissionId = subRef.id;
+        currentWordId = wordId;
+    }
+
+    document.getElementById("submitBtn").disabled = false;
+    return true;
+}
+
 // ── Save draft ─────────────────────────────────────────────
 
 async function saveDraft() {
@@ -242,71 +419,7 @@ async function saveDraft() {
             return;
         }
 
-        var after = buildAfterSnapshot(data);
-        var now = new Date().toISOString();
-        var C = Dict.db.COLLECTIONS;
-
-        if (currentSubmissionId) {
-            await Dict.db.docRef(C.submissions, currentSubmissionId).update({
-                after: after,
-                updatedAt: now,
-            });
-        } else {
-            var wordId = currentWordId || await generateWordId(data.headwordNorm);
-
-            if (currentEditType === "create") {
-                var existing = await Dict.db.docRef(C.words, wordId).get();
-                if (existing.exists) {
-                    setSaveStatus("මෙම වචනය දැනටමත් පවතී. සංස්කරණය කිරීමට editor.html?id=" + wordId + " වෙත යන්න.", "error");
-                    return;
-                }
-
-                await Dict.db.docRef(C.words, wordId).set({
-                    headword: data.headword,
-                    headwordSi: data.headwordSi,
-                    headwordNorm: data.headwordNorm,
-                    status: "draft",
-                    version: 0,
-                    isPublished: false,
-                    createdBy: auth.uid,
-                    createdAt: now,
-                    updatedBy: auth.uid,
-                    updatedAt: now,
-                });
-            }
-
-            var before = null;
-            if (currentEditType === "edit" && existingWordSnapshot) {
-                before = {
-                    headword: existingWordSnapshot.headword,
-                    headwordSi: existingWordSnapshot.headwordSi,
-                    headwordNorm: existingWordSnapshot.headwordNorm,
-                    meanings: existingWordSnapshot.meanings || [],
-                    forms: existingWordSnapshot.forms || [],
-                    examples: existingWordSnapshot.examples || [],
-                };
-            }
-
-            var subRef = await Dict.db.col(C.submissions).add({
-                wordId: wordId,
-                type: currentEditType || "create",
-                status: "draft",
-                before: before,
-                after: after,
-                submittedBy: auth.uid,
-                submittedAt: null,
-                reviewedBy: null,
-                reviewedAt: null,
-                reviewNote: null,
-                createdAt: now,
-                updatedAt: now,
-            });
-
-            currentSubmissionId = subRef.id;
-            currentWordId = wordId;
-        }
-
-        document.getElementById("submitBtn").disabled = false;
+        await _saveDraftCore(data, auth);
         setSaveStatus("සුරැකීය.", "success");
     } catch (error) {
         console.error("[editor] saveDraft failed:", error);
@@ -319,7 +432,7 @@ async function saveDraft() {
 // ── Submit for review ──────────────────────────────────────
 
 async function submitForReview() {
-    if (isSubmitting || !currentSubmissionId) return;
+    if (isSubmitting) return;
 
     var data = collectFormData();
     var errors = validate(data);
@@ -328,30 +441,66 @@ async function submitForReview() {
         return;
     }
 
-    if (!confirm("සමාලෝචනයට යවන්නද? යැවීමෙන් පසුව වෙනස් කළ නොහැක.")) return;
+    if (!confirm(currentSubmissionId ? "වෙනස්කම් සංස්කරණය කර නැවත සමාලෝචනයට යවන්නද? යැවීමෙන් පසුව වෙනස් කළ නොහැක." : "සමාලෝචනයට යවන්නද? යැවීමෙන් පසුව වෙනස් කළ නොහැක.")) return;
 
     isSubmitting = true;
     setSaveStatus("යවමින්...", "");
 
     try {
         var auth = Dict.auth.lastState();
+        if (!auth.uid) {
+            setSaveStatus("පිවිසුම් අවශ්‍යයි.", "error");
+            return;
+        }
+
+        if (!currentSubmissionId) {
+            setSaveStatus("Draft සුරකිමින්...", "");
+            try {
+                await _saveDraftCore(data, auth);
+            } catch (draftErr) {
+                console.error("[editor] auto-draft failed:", draftErr);
+                setSaveStatus("Draft සුරැකීම අසාර්ථකයි: " + (draftErr.message || draftErr), "error");
+                return;
+            }
+            if (!currentSubmissionId) {
+                setSaveStatus("Draft සුරැකීම අසාර්ථකයි.", "error");
+                return;
+            }
+        }
+
         var after = buildAfterSnapshot(data);
         var now = new Date().toISOString();
         var C = Dict.db.COLLECTIONS;
+
+        console.log("[editor] submitForReview update:", {
+            submissionId: currentSubmissionId,
+            authUid: auth.uid,
+            currentStatus: "changes_requested→pending",
+            submittedBy: "from loaded submission",
+            wordId: currentWordId,
+        });
 
         await Dict.db.docRef(C.submissions, currentSubmissionId).update({
             after: after,
             status: "pending",
             submittedAt: now,
+            reviewNote: null,
             updatedAt: now,
         });
 
         if (currentWordId) {
-            await Dict.db.docRef(C.words, currentWordId).update({
-                status: "pending",
-                updatedAt: now,
-                updatedBy: auth.uid,
-            });
+            try {
+                var wordSnap = await Dict.db.docRef(C.words, currentWordId).get();
+                if (wordSnap.exists) {
+                    await Dict.db.docRef(C.words, currentWordId).update({
+                        status: "pending",
+                        updatedAt: now,
+                        updatedBy: auth.uid,
+                    });
+                }
+            } catch (wordErr) {
+                console.warn("[editor] word status update skipped:", wordErr);
+            }
         }
 
         document.getElementById("submitBtn").disabled = true;
@@ -362,7 +511,9 @@ async function submitForReview() {
         if (form) form.classList.add("submitted");
     } catch (error) {
         console.error("[editor] submitForReview failed:", error);
-        setSaveStatus("දෝෂයක්: " + (error.message || error), "error");
+        var errCode = error.code || error.name || "";
+        var errMsg = error.message || String(error);
+        setSaveStatus("දෝෂයක්: " + errMsg + (errCode ? " [" + errCode + "]" : ""), "error");
     } finally {
         isSubmitting = false;
     }
@@ -493,20 +644,45 @@ async function setupEditor(auth) {
         return;
     }
 
+    if (!auth.uid) {
+        console.error("[editor] setupEditor: auth.uid is null after auth check");
+        return;
+    }
+
     editorReady = true;
     document.getElementById("editorForm").style.display = "block";
+
+    // Load changes-requested notification (background, non-blocking)
+    (function () {
+        var container = document.getElementById("editorChangesList");
+        if (container) container.textContent = "සමාලෝචන වෙනස්කම් පරීක්ෂා කරමින්...";
+        loadChangesRequestedSubmissions(auth.uid).then(function (subs) {
+            renderChangesNotification(subs, auth.uid);
+        }).catch(function (err) {
+            console.error("[editor] changes notification failed:", err);
+            if (container) container.textContent = "";
+        });
+    })();
 
     var params = new URLSearchParams(window.location.search);
     var subId = params.get("submission");
     var wId = params.get("id");
 
     if (subId) {
+        console.log("[editor] loading submission:", subId, "for uid:", auth.uid);
         var result = await loadSubmission(subId);
         if (result.note !== "ok" || !result.submission) {
-            setMessage("Draft හමු නොවීය.", "error");
+            var errDetail = result.detail ? " (" + result.detail + ")" : "";
+            setMessage("Submission හමු නොවීය: " + subId + errDetail, "error");
             return;
         }
         var sub = result.submission;
+
+        console.log("[editor] submission loaded:", {
+            id: sub.id, status: sub.status, type: sub.type,
+            wordId: sub.wordId, submittedBy: sub.submittedBy,
+            hasAfter: !!sub.after, hasReviewNote: !!sub.reviewNote
+        });
 
         if (sub.submittedBy !== auth.uid && !auth.isAdmin) {
             setMessage("මෙම draft එක ඔබේ නොවේ.", "error");
@@ -522,9 +698,19 @@ async function setupEditor(auth) {
         prefillForm(sub.after);
 
         if (sub.status === "changes_requested") {
-            setMessage("සමාලෝචකයා වෙනස්කම් ඉල්ලා ඇත. සංස්කරණය කර නැවත යවන්න. (" + (sub.reviewNote || "") + ")", "info");
+            var msgEl = document.getElementById("editorMessage");
+            msgEl.innerHTML =
+                '<div class="editor-changes-box">' +
+                    '<div class="editor-changes-status">⚠ වෙනස්කම් ඉල්ලා ඇත</div>' +
+                    '<div class="editor-changes-detail">මෙම වචනය සඳහා සමාලෝචකයා වෙනස්කම් ඉල්ලා ඇත. පහත සඳහන් අදහස බලා සංස්කරණය කර නැවත යවන්න.</div>' +
+                    '<div class="editor-changes-label">සමාලෝචකගේ අදහස:</div>' +
+                    '<div class="editor-changes-note">' + esc(sub.reviewNote || "—") + '</div>' +
+                '</div>';
+            msgEl.className = "editor-message info";
             document.getElementById("submitBtn").disabled = false;
+            document.getElementById("submitBtn").textContent = "සමාලෝචනයට නැවත යවන්න";
             document.getElementById("saveDraftBtn").disabled = false;
+            console.log("[editor] changes_requested UI rendered for submission:", subId);
         } else if (sub.status !== "draft") {
             document.getElementById("saveDraftBtn").disabled = true;
             document.getElementById("submitBtn").disabled = true;
@@ -555,10 +741,12 @@ async function setupEditor(auth) {
         };
 
         prefillForm(existingWordSnapshot);
+        document.getElementById("submitBtn").disabled = false;
     } else {
         currentEditType = "create";
         document.getElementById("editorTitle").textContent = "නව වචනයක්";
         addMeaningRow(null);
+        document.getElementById("submitBtn").disabled = false;
     }
 
     document.getElementById("saveDraftBtn").addEventListener("click", saveDraft);
@@ -583,6 +771,8 @@ function init() {
 
 Dict.editor.loadSubmission = loadSubmission;
 Dict.editor.loadWordForEdit = loadWordForEdit;
+Dict.editor.loadChangesRequestedSubmissions = loadChangesRequestedSubmissions;
+Dict.editor.renderChangesNotification = renderChangesNotification;
 Dict.editor.saveDraft = saveDraft;
 Dict.editor.submitForReview = submitForReview;
 Dict.editor.validate = validate;

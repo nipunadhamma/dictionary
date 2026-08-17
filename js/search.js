@@ -116,16 +116,30 @@ async function fsSearchBySinhala(prefix, lastDoc) {
     if (!Dict.db.init() || !Dict.db.isAvailable()) return { results: [], cursor: null };
 
     var col = Dict.db.col(Dict.db.COLLECTIONS.searchIndex);
-    var q = col.where("si", ">=", prefix).where("si", "<", prefix + "\uf8ff").orderBy("si");
-    if (lastDoc) q = q.startAfter(lastDoc);
-    q = q.limit(PAGE_SIZE);
-
-    var snap = await q.get();
-    var cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
-
     var out = [];
-    snap.forEach(function(d) { out.push({ id: d.id, ...d.data(), match: MATCH_SINHALA }); });
-    return { results: out, cursor: cursor };
+
+    // Primary: exact token match on "all" field
+    // The "all" array contains individual Sinhala tokens (e.g. ["නවලොකොත්තර", "ධර්මය", "dharmaya"])
+    var tokenSnap = await col.where("all", "array-contains", prefix).limit(PAGE_SIZE).get();
+    tokenSnap.forEach(function(d) {
+        out.push({ id: d.id, ...d.data(), match: MATCH_SINHALA });
+    });
+
+    // Secondary: prefix match on "si" field (works when si starts with the search term)
+    if (!lastDoc) {
+        var q = col.where("si", ">=", prefix).where("si", "<", prefix + "\uf8ff").orderBy("si");
+        q = q.limit(PAGE_SIZE);
+        var siSnap = await q.get();
+        siSnap.forEach(function(d) {
+            if (!out.find(function(r) { return r.id === d.id; }))
+                out.push({ id: d.id, ...d.data(), match: MATCH_SINHALA });
+        });
+    }
+
+    // Cursor from combined results for pagination
+    var lastResults = out.slice(-PAGE_SIZE);
+
+    return { results: out.slice(0, PAGE_SIZE), cursor: null };
 }
 
 async function fsSearchByPali(prefix, rawLower, lastDoc) {

@@ -10,7 +10,7 @@ service cloud.firestore {
 
     function isActiveUser() {
       return signedIn() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active != false;
     }
 
     function hasRole(role) {

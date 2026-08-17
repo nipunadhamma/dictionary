@@ -195,7 +195,9 @@ function renderSubRow(sub, showOwner) {
     var typeLabel = sub.type === "create" ? "නව" : "සංස්කරණය";
 
     var editLink = "";
-    if (sub.status === "draft" || sub.status === "changes_requested") {
+    if (sub.status === "changes_requested") {
+        editLink = ' <a href="editor.html?submission=' + esc(sub.id) + '" class="btn primary">නැවත සංස්කරණය කරන්න</a>';
+    } else if (sub.status === "draft") {
         editLink = ' <a href="editor.html?submission=' + esc(sub.id) + '" class="btn small primary">සංස්කරණය</a>';
     } else if (sub.wordId) {
         editLink = ' <a href="entry.html?id=' + encodeURIComponent(sub.wordId) + '" class="btn small secondary">බලන්න</a>';
@@ -203,7 +205,7 @@ function renderSubRow(sub, showOwner) {
 
     var changesNote = "";
     if (sub.status === "changes_requested" && sub.reviewNote) {
-        changesNote = '<div class="dash-review-note">සමාලෝචක සටහන: ' + esc(sub.reviewNote) + '</div>';
+        changesNote = '<div class="dash-review-note changes">සමාලෝචකගේ අදහස: ' + esc(sub.reviewNote) + '</div>';
     } else if (sub.status === "rejected" && sub.reviewNote) {
         changesNote = '<div class="dash-review-note rejected">ප්‍රතික්ෂේප හේතුව: ' + esc(sub.reviewNote) + '</div>';
     } else if (sub.status === "approved" && sub.reviewNote) {
@@ -232,18 +234,21 @@ function renderEditorDashboard(auth) {
     var dashContent = document.getElementById("dashContent");
     if (!dashContent) return;
 
-    var html = '<div class="dash-section">';
-    html += '<div class="dash-section-header">';
+    var section = document.createElement("div");
+    section.className = "dash-section";
+
+    var html = '<div class="dash-section-header">';
     html += '<h2>මගේ කාර්ය පුවරුව</h2>';
     html += '<a href="editor.html" class="btn primary">+ නව වචනයක්</a>';
     html += '</div>';
+    html += '<div id="dashChangesAlert"></div>';
     html += '<div id="dashSubList" class="dash-sub-list"><div class="empty">පූරණය වෙමින්...</div></div>';
     html += '<div id="dashLoadMore" class="load-more-container" style="display:none">';
     html += '<button type="button" class="btn secondary" id="dashLoadMoreBtn">තවත් පෙන්වන්න</button>';
     html += '</div>';
-    html += '</div>';
 
-    dashContent.innerHTML = html;
+    section.innerHTML = html;
+    dashContent.appendChild(section);
 
     loadEditorSubmissions(auth.uid);
 }
@@ -272,8 +277,24 @@ async function loadEditorSubmissions(uid, cursor) {
         return;
     }
 
+    var alertEl = document.getElementById("dashChangesAlert");
+    if (alertEl) {
+        var crItems = groups.changes_requested || [];
+        if (crItems.length) {
+            var alertHtml = '<div class="dash-changes-alert">';
+            alertHtml += '<h3 class="dash-changes-alert-title">⚠ වෙනස්කම් අවශ්‍යයි <span class="dash-group-count">(' + crItems.length + ')</span></h3>';
+            crItems.forEach(function (sub) {
+                alertHtml += renderSubRow(sub, false);
+            });
+            alertHtml += '</div>';
+            alertEl.innerHTML = alertHtml;
+        } else {
+            alertEl.innerHTML = "";
+        }
+    }
+
     var html = '';
-    var statusOrder = ["draft", "pending", "changes_requested", "approved", "rejected"];
+    var statusOrder = ["draft", "pending", "approved", "rejected"];
 
     statusOrder.forEach(function (status) {
         var items = groups[status];
@@ -310,14 +331,16 @@ function renderReviewerDashboard(auth) {
     var dashContent = document.getElementById("dashContent");
     if (!dashContent) return;
 
-    var html = '<div class="dash-section">';
-    html += '<div class="dash-section-header">';
+    var section = document.createElement("div");
+    section.className = "dash-section";
+
+    var html = '<div class="dash-section-header">';
     html += '<h2>සමාලෝචක කාර්ය පුවරුව</h2>';
     html += '<a href="review.html" class="btn primary">සමාලෝචනය</a>';
     html += '</div>';
 
     html += '<div class="dash-reviewer-stats">';
-    html += '<div class="dash-stat-card" id="dashPendingCount">';
+    html += '<div class="dash-stat-card" id="dashReviewerPendingCount">';
     html += '<div class="dash-stat-value">...</div>';
     html += '<div class="dash-stat-label">සමාලෝචනය අවශ්‍ය</div>';
     html += '</div>';
@@ -327,14 +350,15 @@ function renderReviewerDashboard(auth) {
     html += '<div id="dashRecentReviews" class="dash-sub-list"><div class="empty">පූරණය වෙමින්...</div></div>';
     html += '</div>';
 
-    dashContent.innerHTML = html;
+    section.innerHTML = html;
+    dashContent.appendChild(section);
 
     loadReviewerData(auth.uid);
 }
 
 async function loadReviewerData(uid) {
     var pendingResult = await pendingCount();
-    var countEl = document.getElementById("dashPendingCount");
+    var countEl = document.getElementById("dashReviewerPendingCount");
     if (countEl) {
         var val = countEl.querySelector(".dash-stat-value");
         if (val) val.textContent = pendingResult.count;
@@ -384,8 +408,10 @@ function renderAdminDashboard(auth) {
     var dashContent = document.getElementById("dashContent");
     if (!dashContent) return;
 
-    var html = '<div class="dash-section">';
-    html += '<div class="dash-section-header">';
+    var section = document.createElement("div");
+    section.className = "dash-section";
+
+    var html = '<div class="dash-section-header">';
     html += '<h2>පරිපාලක කාර්ය පුවරුව</h2>';
     html += '</div>';
 
@@ -405,18 +431,17 @@ function renderAdminDashboard(auth) {
     html += '</div>';
 
     html += '<div class="dash-reviewer-stats">';
-    html += '<div class="dash-stat-card" id="dashPendingCount">';
+    html += '<div class="dash-stat-card" id="dashAdminPendingCount">';
     html += '<div class="dash-stat-value">...</div>';
     html += '<div class="dash-stat-label">සමාලෝචනය අවශ්‍ය</div>';
     html += '</div>';
     html += '</div>';
 
-    html += '</div>';
-
-    dashContent.innerHTML = html;
+    section.innerHTML = html;
+    dashContent.appendChild(section);
 
     pendingCount().then(function (result) {
-        var countEl = document.getElementById("dashPendingCount");
+        var countEl = document.getElementById("dashAdminPendingCount");
         if (countEl) {
             var val = countEl.querySelector(".dash-stat-value");
             if (val) val.textContent = result.count;
@@ -452,13 +477,20 @@ async function setupDashboard(auth) {
 
     dashReady = true;
 
+    var dashContent = document.getElementById("dashContent");
+    if (!dashContent) return;
+    dashContent.innerHTML = "";
+
     if (auth.isAdmin) {
         renderAdminDashboard(auth);
-    } else if (auth.isReviewer) {
+    }
+    if (auth.isReviewer) {
         renderReviewerDashboard(auth);
-    } else if (auth.isEditor) {
+    }
+    if (auth.isEditor) {
         renderEditorDashboard(auth);
-    } else {
+    }
+    if (!auth.isAdmin && !auth.isReviewer && !auth.isEditor) {
         renderPublicDashboard();
     }
 }

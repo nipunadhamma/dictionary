@@ -930,6 +930,65 @@ footer.stats a {
     background: #e6f4ea;
 }
 
+.dash-review-note.changes {
+    color: #8a5a00;
+    background: #fff3cd;
+    border-left: 3px solid #e67e22;
+}
+
+.dash-changes-alert {
+    background: #fff3cd;
+    border: 1px solid #e67e22;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+}
+
+.dash-changes-alert .dash-sub-list,
+.dash-changes-alert .dash-sub-row {
+    background: transparent;
+    border-color: #f0d9a0;
+}
+
+.dash-changes-alert-title {
+    font-size: 15px;
+    margin: 0 0 8px;
+    color: #8a5a00;
+}
+
+.editor-changes-box {
+    background: #fff3cd;
+    border: 2px solid #e67e22;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.editor-changes-status {
+    font-size: 16px;
+    font-weight: 700;
+    color: #8a5a00;
+    margin-bottom: 6px;
+}
+
+.editor-changes-detail {
+    color: #5a4000;
+    margin-bottom: 10px;
+}
+
+.editor-changes-label {
+    font-weight: 600;
+    color: #6b4d00;
+    margin-bottom: 2px;
+}
+
+.editor-changes-note {
+    font-weight: 600;
+    color: #8a5a00;
+    font-size: 15px;
+}
+
 /* reviewer stats */
 
 .dash-reviewer-stats {
@@ -998,6 +1057,91 @@ footer.stats a {
 .review-status.draft {
     background: var(--chip);
     color: var(--muted);
+}
+
+/* ---------- editor changes notification panel ---------- */
+
+.editor-changes-list {
+    background: #fff3cd;
+    border: 2px solid #e67e22;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+}
+
+.editor-changes-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: #8a5a00;
+    margin-bottom: 10px;
+}
+
+.editor-change-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.editor-change-item {
+    background: #fff;
+    border: 1px solid #f0d9a0;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+
+.editor-change-main {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.editor-change-num {
+    font-weight: 600;
+    color: #8a5a00;
+    min-width: 22px;
+}
+
+.editor-change-headword {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.editor-change-pali {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+}
+
+.editor-change-note {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #5a4000;
+    font-style: italic;
+    padding-left: 30px;
+}
+
+.editor-change-action {
+    margin-top: 6px;
+    padding-left: 30px;
+}
+
+.editor-change-action .btn {
+    font-size: 12px;
+    padding: 4px 12px;
+}
+
+@media (max-width: 640px) {
+    .editor-change-main {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .editor-change-note,
+    .editor-change-action {
+        padding-left: 0;
+    }
 }
 
 @media (max-width: 640px) {

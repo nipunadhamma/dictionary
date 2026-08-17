@@ -38,16 +38,18 @@ async function pendingSubmissions() {
     try {
         var snap = await Dict.db.col(Dict.db.COLLECTIONS.submissions)
             .where("status", "==", "pending")
-            .orderBy("submittedAt", "desc")
             .get();
         var results = [];
         snap.forEach(function (d) {
             results.push({ id: d.id, ...d.data() });
         });
+        results.sort(function (a, b) {
+            return (b.submittedAt || "").localeCompare(a.submittedAt || "");
+        });
         return { results: results, note: "ok" };
     } catch (error) {
-        console.warn("[review] pendingSubmissions failed:", error);
-        return { results: [], note: "error" };
+        console.error("[review] pendingSubmissions failed:", error);
+        return { results: [], note: "error", detail: error.message || String(error) };
     }
 }
 
@@ -435,12 +437,15 @@ async function loadReviews(submissionId) {
     try {
         var snap = await Dict.db.col(Dict.db.COLLECTIONS.reviews)
             .where("submissionId", "==", submissionId)
-            .orderBy("createdAt", "desc")
             .get();
         var results = [];
         snap.forEach(function (d) { results.push({ id: d.id, ...d.data() }); });
+        results.sort(function (a, b) {
+            return (b.createdAt || "").localeCompare(a.createdAt || "");
+        });
         return results;
     } catch (error) {
+        console.warn("[review] loadReviews failed:", error);
         return [];
     }
 }
@@ -794,8 +799,9 @@ async function setupReview(auth) {
         reviewSetMessage("Firebase සැකසුම නොමැත.", "error");
         return;
     }
-    if (result.note === "error") {
-        reviewSetMessage("දෝෂයක්: submissions පූරණය කළ නොහැක.", "error");
+    if (result.note !== "ok") {
+        var detail = result.detail ? " (" + result.detail + ")" : "";
+        reviewSetMessage("දෝෂයක්: submissions පූරණය කළ නොහැක." + detail, "error");
         return;
     }
 
