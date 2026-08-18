@@ -268,6 +268,18 @@ footer.stats a {
     margin-left: 6px;
 }
 
+.meaning-ai-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #e8f0fe;
+    color: #1a5dab;
+    font-weight: 600;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
 .form-tag {
     display: inline-block;
     font-size: 13px;
@@ -1089,6 +1101,25 @@ footer.stats a {
     margin-top: 2px;
 }
 
+.dash-publish-section {
+    margin-top: 20px;
+}
+
+.dash-publish-section h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.publish-btn {
+    white-space: nowrap;
+}
+
+.publish-queued {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+}
+
 .review-status.draft {
     background: var(--chip);
     color: var(--muted);
@@ -1167,6 +1198,170 @@ footer.stats a {
     padding: 4px 12px;
 }
 
+/* ---------- AI entries modal ---------- */
+
+.dash-admin-ai-btn {
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.dash-editor-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.ai-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-modal.open {
+    display: flex;
+}
+
+.ai-modal-backdrop {
+    position: absolute;
+    inset: 0;
+}
+
+.ai-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 0;
+    width: 640px;
+    max-width: 94vw;
+    max-height: 88vh;
+    position: relative;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ai-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 1;
+    z-index: 1;
+}
+
+.ai-modal-title {
+    margin: 0;
+    padding: 20px 24px 0;
+    font-size: 18px;
+}
+
+.ai-modal-stats {
+    padding: 6px 24px 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.ai-modal-search {
+    display: flex;
+    gap: 8px;
+    padding: 12px 24px;
+}
+
+.ai-modal-search input {
+    flex: 1;
+    font: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.ai-modal-search input:focus {
+    outline: 2px solid var(--accent-soft);
+    border-color: var(--accent);
+}
+
+.ai-modal-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 24px 12px;
+    min-height: 120px;
+    max-height: 55vh;
+}
+
+.ai-row {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+    position: relative;
+}
+
+.ai-row:hover {
+    border-color: var(--accent);
+}
+
+.ai-row-head {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.ai-row-si {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.ai-row-pali {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+}
+
+.ai-row-meanings {
+    margin: 2px 0;
+}
+
+.ai-meaning {
+    font-size: 13px;
+    margin: 2px 0;
+    line-height: 1.4;
+}
+
+.ai-meaning-text {
+    margin-right: 6px;
+}
+
+.ai-row-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.ai-row-link:hover {
+    text-decoration: underline;
+}
+
+.ai-modal-more {
+    padding: 8px 24px 16px;
+    text-align: center;
+}
+
 @media (max-width: 640px) {
     .editor-change-main {
         flex-direction: column;
@@ -1200,5 +1395,16 @@ footer.stats a {
 
     .dash-reviewer-stats {
         flex-direction: column;
+    }
+
+    .ai-modal-box {
+        width: 100%;
+        max-width: 100vw;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    .ai-row-head {
+        flex-direction: column;
+        gap: 2px;
     }
 }

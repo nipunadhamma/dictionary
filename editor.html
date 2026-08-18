@@ -103,6 +103,26 @@
         <a href="offline.html" class="admin-link">Offline පිටුව</a>
     </footer>
 
+    <!-- AI Entries Modal -->
+    <div id="aiModal" class="ai-modal" role="dialog" aria-modal="true" aria-label="AI අර්ථ සහිත වචන">
+        <div class="ai-modal-backdrop" data-ai-close></div>
+        <div class="ai-modal-box">
+            <button type="button" class="ai-modal-close" data-ai-close aria-label="වසන්න">&times;</button>
+            <h3 class="ai-modal-title">AI අර්ථ සහිත වචන</h3>
+            <div class="ai-modal-stats" id="aiStats"></div>
+            <div class="ai-modal-search">
+                <input type="search" id="aiSearchInput" placeholder="සොයන්න: සිංහල / පාලි / අර්ථය..." autocomplete="off" spellcheck="false">
+                <button type="button" id="aiSearchBtn" class="btn primary small">සොයන්න</button>
+            </div>
+            <div class="ai-modal-list" id="aiList">
+                <div class="empty">පූරණය වෙමින්...</div>
+            </div>
+            <div class="ai-modal-more" id="aiMore" style="display:none">
+                <button type="button" class="btn secondary" id="aiMoreBtn">තවත් පෙන්වන්න</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/firebase-config.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -113,6 +133,7 @@
     <script src="js/static.js" defer></script>
     <script src="js/resolver.js" defer></script>
     <script src="js/editor.js" defer></script>
+    <script src="js/ai-entries.js" defer></script>
 
 </body>
 

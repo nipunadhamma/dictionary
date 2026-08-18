@@ -90,7 +90,9 @@ function renderEntryPage(word) {
             if (m.grammar && m.grammar.pos) {
                 html += '<span class="meaning-grammar">' + esc(m.grammar.pos) + '</span>';
             }
-            if (m.sourceId) {
+            if (m.sourceId === "ai") {
+                html += '<span class="meaning-ai-badge">AI අර්ථය</span>';
+            } else if (m.sourceId) {
                 html += '<span class="meaning-source">' + esc(m.sourceId) + '</span>';
             }
             html += '</div>';

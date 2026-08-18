@@ -126,7 +126,11 @@ async function renderDetail(item) {
             let html = resolved.meanings.map(function(m) {
                 let s = '<div class="meaning-item">';
                 s += '<div class="meaning-text">' + esc(m.si || "—") + "</div>";
-                if (m.sourceId) s += '<span class="meaning-source">' + esc(m.sourceId) + "</span>";
+                if (m.sourceId === "ai") {
+                    s += '<span class="meaning-ai-badge">AI අර්ථය</span>';
+                } else if (m.sourceId) {
+                    s += '<span class="meaning-source">' + esc(m.sourceId) + "</span>";
+                }
                 s += "</div>";
                 return s;
             }).join("");

@@ -313,7 +313,10 @@ function renderDetail(e) {
         (m) => `
       <div class="meaning-block">
         <div class="meaning-text">${escapeHTML(m.si)}</div>
-        <div class="meaning-src">මූලාශ්‍රය: ${escapeHTML(m.src || "—")}</div>
+        ${m.src === "ai"
+          ? `<div class="meaning-ai-badge">AI අර්ථය</div>`
+          : `<div class="meaning-src">මූලාශ්‍රය: ${escapeHTML(m.src || "—")}</div>`
+        }
       </div>`
       )
       .join("")}

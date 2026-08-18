@@ -239,7 +239,10 @@ function renderEditorDashboard(auth) {
 
     var html = '<div class="dash-section-header">';
     html += '<h2>මගේ කාර්ය පුවරුව</h2>';
-    html += '<a href="editor.html" class="btn primary">+ නව වචනයක්</a>';
+    html += '<span class="dash-editor-actions">';
+    html += '<button type="button" class="btn secondary small" data-ai-open>AI අර්ථ</button>';
+    html += ' <a href="editor.html" class="btn primary">+ නව වචනයක්</a>';
+    html += '</span>';
     html += '</div>';
     html += '<div id="dashChangesAlert"></div>';
     html += '<div id="dashSubList" class="dash-sub-list"><div class="empty">පූරණය වෙමින්...</div></div>';
@@ -428,6 +431,10 @@ function renderAdminDashboard(auth) {
     html += '<div class="dash-admin-link-title">පරිපාලනය</div>';
     html += '<div class="dash-admin-link-desc">පරිපාලක මෙවලම් (legacy)</div>';
     html += '</a>';
+    html += '<button type="button" class="dash-admin-link dash-admin-ai-btn" data-ai-open>';
+    html += '<div class="dash-admin-link-title">AI අර්ථ</div>';
+    html += '<div class="dash-admin-link-desc">AI මූලාශ්‍ර වචන බලන්න</div>';
+    html += '</button>';
     html += '</div>';
 
     html += '<div class="dash-reviewer-stats">';
@@ -435,6 +442,11 @@ function renderAdminDashboard(auth) {
     html += '<div class="dash-stat-value">...</div>';
     html += '<div class="dash-stat-label">සමාලෝචනය අවශ්‍ය</div>';
     html += '</div>';
+    html += '</div>';
+
+    html += '<div class="dash-publish-section">';
+    html += '<h3>ප්‍රකාශය කළ යුතු වචන</h3>';
+    html += '<div id="dashPublishList" class="dash-sub-list"><div class="empty">පූරණය වෙමින්...</div></div>';
     html += '</div>';
 
     section.innerHTML = html;
@@ -447,6 +459,130 @@ function renderAdminDashboard(auth) {
             if (val) val.textContent = result.count;
         }
     });
+
+    loadPublishQueue();
+}
+
+// ── Publish queue ──────────────────────────────────────────
+
+async function loadPublishQueue() {
+    var listEl = document.getElementById("dashPublishList");
+    if (!listEl) return;
+    if (!Dict.db.init() || !Dict.db.isAvailable()) {
+        listEl.innerHTML = '<div class="empty">Firebase සැකසුම නොමැත.</div>';
+        return;
+    }
+
+    try {
+        var C = Dict.db.COLLECTIONS;
+        var words = [];
+
+        try {
+            var snap = await Dict.db.col(C.words)
+                .where("status", "==", "published")
+                .limit(100)
+                .get();
+            snap.forEach(function (d) {
+                words.push({ id: d.id, ...d.data() });
+            });
+        } catch (e) {
+            console.warn("[dashboard] words query failed, trying fallback:", e);
+            var allSnap = await Dict.db.col(C.words).limit(100).get();
+            allSnap.forEach(function (d) {
+                var data = d.data();
+                if (data.status === "published" || data.isPublished) {
+                    words.push({ id: d.id, ...data });
+                }
+            });
+        }
+
+        var queuedIds = {};
+        try {
+            var queuedSnap = await Dict.db.col(C.publishQueue).get();
+            queuedSnap.forEach(function (d) {
+                queuedIds[d.id] = true;
+            });
+        } catch (e) {
+            console.warn("[dashboard] publishQueue query failed:", e);
+        }
+
+        if (!words.length) {
+            listEl.innerHTML = '<div class="empty">ප්‍රකාශය කළ යුතු වචන නොමැත.</div>';
+            return;
+        }
+
+        var html = '';
+        words.forEach(function (w) {
+            var isQueued = queuedIds[w.id];
+            html += '<div class="dash-sub-row">';
+            html += '<div class="dash-sub-main">';
+            html += '<div class="dash-sub-word">';
+            html += esc(w.headword || w.id);
+            if (w.headwordSi) html += ' <span class="dash-sub-si">' + esc(w.headwordSi) + '</span>';
+            html += '</div>';
+            html += '<div class="dash-sub-meta">';
+            html += '<span class="dash-sub-type">v' + (w.version || 1) + '</span>';
+            html += '<span class="dash-sub-time">' + formatTimestamp(w.updatedAt) + '</span>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="dash-sub-actions">';
+            if (isQueued) {
+                html += '<span class="publish-queued">බල්කයේ ඇත</span>';
+            } else {
+                html += '<button type="button" class="btn small primary publish-btn" data-word-id="' + esc(w.id) + '">ප්‍රකාශය</button>';
+            }
+            html += '</div>';
+            html += '</div>';
+        });
+
+        listEl.innerHTML = html;
+
+        listEl.querySelectorAll(".publish-btn").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                publishWord(btn.getAttribute("data-word-id"));
+            });
+        });
+
+    } catch (error) {
+        console.warn("[dashboard] loadPublishQueue failed:", error);
+        listEl.innerHTML = '<div class="empty">දෝෂයක්: පූරණය කළ නොහැක.</div>';
+    }
+}
+
+async function publishWord(wordId) {
+    if (!Dict.db.init() || !Dict.db.isAvailable()) return;
+
+    try {
+        var C = Dict.db.COLLECTIONS;
+        var wordSnap = await Dict.db.docRef(C.words, wordId).get();
+        if (!wordSnap.exists) return;
+
+        var word = wordSnap.data();
+
+        var meaningsSnap = await Dict.db.col(C.wordMeanings)
+            .where("wordId", "==", wordId).orderBy("order").get();
+        var meanings = [];
+        meaningsSnap.forEach(function (d) { meanings.push(d.data()); });
+
+        var a = Dict.auth.lastState ? Dict.auth.lastState() : {};
+        var now = new Date().toISOString();
+        await Dict.db.docRef(C.publishQueue, wordId).set({
+            wordId: wordId,
+            headword: word.headword || "",
+            headwordSi: word.headwordSi || "",
+            headwordNorm: word.headwordNorm || "",
+            meanings: meanings,
+            queuedBy: a.uid || "",
+            queuedAt: now,
+            applied: false,
+        });
+
+        var listEl = document.getElementById("dashPublishList");
+        if (listEl) loadPublishQueue();
+
+    } catch (error) {
+        console.warn("[dashboard] publishWord failed:", error);
+    }
 }
 
 // ── Public user view ───────────────────────────────────────

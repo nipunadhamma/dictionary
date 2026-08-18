@@ -14,6 +14,7 @@ const COLLECTIONS = {
     reviews: "reviews",
     versions: "versions",
     searchIndex: "searchIndex",
+    publishQueue: "publishQueue",
 };
 
 Dict.db.COLLECTIONS = COLLECTIONS;

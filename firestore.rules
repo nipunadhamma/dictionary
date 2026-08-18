@@ -124,5 +124,15 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isAdmin();
     }
+
+    // ── publishQueue ─────────────────────────────────────────
+    // Admins queue approved entries for static data rebuild.
+
+    match /publishQueue/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

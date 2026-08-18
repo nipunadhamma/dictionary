@@ -613,10 +613,12 @@ function updateEditorAuthBar(a) {
         var reviewLink = a.isReviewer
             ? '<a href="review.html" class="btn small secondary">සමාලෝචනය</a>'
             : "";
+        var aiLink = '<button type="button" class="btn small secondary" data-ai-open>AI අර්ථ</button>';
         bar.innerHTML =
             '<a href="index.html" class="btn small secondary">ශබ්දකෝෂය</a>' +
             '<a href="dashboard.html" class="btn small secondary">කාර්ය පුවරුව</a>' +
             reviewLink +
+            aiLink +
             '<span class="auth-email">' + esc(a.email) + "</span>" +
             '<span class="auth-role-badge">' + esc(a.roleLabel) + "</span>" +
             '<button type="button" class="btn small secondary" id="editorSignOutBtn">පිටවීම</button>';
