@@ -1408,3 +1408,43 @@ footer.stats a {
         gap: 2px;
     }
 }
+
+/* ---------- editor/admin page mobile ---------- */
+
+@media (max-width: 640px) {
+    .auth-bar {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .auth-email {
+        width: 100%;
+        font-size: 11px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .auth-bar .btn {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .editor-form {
+        padding: 0;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .wrap-single {
+        padding: 10px;
+        gap: 10px;
+    }
+}
