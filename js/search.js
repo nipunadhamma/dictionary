@@ -316,14 +316,14 @@ function mergeAndDedupe(staticResults, fsResults, matchType) {
         var item = (r._source === "static") ? r : normalizeStaticResult(r, matchType);
         if (!seen[item.id]) {
             seen[item.id] = true;
-            out.push(item);
+            if (!item.ai) out.push(item);
         }
     });
 
     fsResults.forEach(function(r) {
         if (!seen[r.id]) {
             seen[r.id] = true;
-            out.push(r);
+            if (!r.ai) out.push(r);
         }
     });
 

@@ -77,7 +77,7 @@ function build() {
         fs.mkdirSync(path.join(OUT, d), { recursive: true });
     });
 
-    var items = [], idSet = new Set(), dups = 0;
+    var items = [], idSet = new Set(), dups = 0, aiOnlyCount = 0;
     keys.forEach(function(k) {
         var e = entries[k], w = e.w||k, r = e.r||"";
         var id = genId(r);
@@ -86,13 +86,19 @@ function build() {
         var meanSi = "";
         if (e.ms && e.ms[0]) meanSi = e.ms[0].si||"";
         else if (e.m && e.m.si) meanSi = e.m.si||"";
+
+        var allMeanings = (e.ms||[]).concat(e.m&&e.m.si ? [e.m] : []);
+        var aiOnly = allMeanings.length > 0 && allMeanings.every(function(m){ return m.src === "ai"; });
+        if (aiOnly) aiOnlyCount++;
+
         items.push({ id:id, w:w, r:r, si:normSinhala(w), pali:normSearch(r),
             sl:singlish(w), mi:normSinhala(meanSi), c:e.c||null,
+            ai: aiOnly ? 1 : 0,
             meanings: (e.ms||[]).map(function(m){return {si:m.si||"",src:m.src||""};})
                 .concat(e.m&&e.m.si ? [{si:e.m.si||"",src:e.m.src||""}] : [])
         });
     });
-    console.log("Processed: " + items.length + " | Unique IDs: " + idSet.size + " | Dups: " + dups);
+    console.log("Processed: " + items.length + " | Unique IDs: " + idSet.size + " | Dups: " + dups + " | AI-only: " + aiOnlyCount);
 
     // Entry batches — full data for display/detail
     var batches = Math.ceil(items.length / BATCH);
@@ -103,7 +109,7 @@ function build() {
         var slice = items.slice(b * BATCH, (b+1) * BATCH);
         slice.forEach(function(item) {
             batch[item.id] = { id:item.id, w:item.w, r:item.r, si:item.si,
-                meanings:item.meanings, c:item.c };
+                meanings:item.meanings, c:item.c, ai:item.ai };
             lookup[item.id] = b;
         });
         var data = JSON.stringify(batch);
@@ -122,7 +128,7 @@ function build() {
             var ck = safeKey(key, 2);
             if (!chunks[ck]) chunks[ck] = {};
             if (!chunks[ck][key]) chunks[ck][key] = [];
-            chunks[ck][key].push({ id:item.id, w:item.w, r:item.r });
+            chunks[ck][key].push({ id:item.id, w:item.w, r:item.r, ai:item.ai });
         });
         var count = 0, bytes = 0;
         Object.keys(chunks).sort().forEach(function(ck) {
