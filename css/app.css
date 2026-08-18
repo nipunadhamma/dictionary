@@ -24,8 +24,8 @@ footer.stats a {
 .auth-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
-    white-space: nowrap;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 .auth-email {
